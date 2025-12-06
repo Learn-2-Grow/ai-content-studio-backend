@@ -46,9 +46,12 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     cors: true,
   });
+
   app.use(helmet());
   app.enableVersioning({
     type: VersioningType.URI,
+    defaultVersion: '1',
+    prefix: 'api/v',
   });
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
