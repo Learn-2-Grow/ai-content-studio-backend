@@ -25,7 +25,7 @@ function logStartup(port: any, startupStartTime: bigint): void {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════════╗');
   console.log('║                                                                                   ║');
-  console.log('║  ⚡  AI CONTENT STUDIO - BACKEND  ⚡                                            ║');
+  console.log('║    🤖 AI CONTENT STUDIO - BACKEND 🤖                                              ║');
   console.log('║  ------------------------------------------------------------------------------   ║');
   console.log(`║    🟢 STATUS:   RUNNING             🌐  PORT: ${port.toString().padEnd(30)}      ║`);
   console.log(`║    ⏱️  STARTUP:  ${totalStartupTime?.toFixed(2)}ms${' '.repeat(17 - totalStartupTime?.toFixed(2).length)} 🕐  STARTED: ${startTime.padEnd(27)}      ║`);
