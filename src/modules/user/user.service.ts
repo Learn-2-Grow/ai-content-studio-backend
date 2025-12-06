@@ -14,16 +14,13 @@ export class UserService {
         private userRepository: UserRepository,
     ) { }
 
-    async findByEmail(email: string): Promise<IUser | null> {
-        return this.userRepository.findByEmail(email);
-    }
 
     async findById(userId: string): Promise<IUser | null> {
         return this.userRepository.findById(userId);
     }
 
     async isActiveByEmail(email: string): Promise<IUser | null> {
-        const user: IUser | null = await this.findByEmail(email);
+        const user: IUser | null = await this.userRepository.findByEmail(email);
         return user
             ? user
             : null;
@@ -31,7 +28,7 @@ export class UserService {
 
     async create(createUserDto: CreateUserDto): Promise<IUser> {
 
-        const existingUser = await this.findByEmail(createUserDto.email);
+        const existingUser = await this.userRepository.findByEmail(createUserDto.email);
         if (existingUser) {
             ExceptionHelper.getInstance().defaultError('User already exists', 'USER_ALREADY_EXISTS', HttpStatus.CONFLICT);
         }

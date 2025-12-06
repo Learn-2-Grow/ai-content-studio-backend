@@ -31,13 +31,17 @@ export class AuthService {
         this.logger.log(`New user registered: ${email}`);
 
         const authResponse: IAuthResponse = {
-            user: user,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+            },
         }
 
         // Generate auth tokens
         if (user) {
             const { accessToken, refreshToken } = await this.generateAuthTokens(user);
-            authResponse.tokens = { accessToken, refreshToken };
+            authResponse.tokens = { access: accessToken, refresh: refreshToken };
         }
 
         return authResponse;
@@ -63,7 +67,14 @@ export class AuthService {
         const { accessToken, refreshToken } = await this.generateAuthTokens(user);
 
         this.logger.log(`User logged in: ${email}`);
-        return { user, tokens: { accessToken, refreshToken } };
+        return {
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+            },
+            tokens: { access: accessToken, refresh: refreshToken }
+        };
     }
 
     async generateAuthTokens(user: IUser): Promise<{ accessToken: string; refreshToken: string }> {
@@ -87,5 +98,7 @@ export class AuthService {
     async validateUser(userId: string) {
         return this.userService.findById(userId);
     }
+
+
 
 }

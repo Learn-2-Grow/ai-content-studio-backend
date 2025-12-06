@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { UserType } from '../enums/user.enum';
 
+export type UserDocument = User & Document;
 
 @Schema({
     timestamps: true, // Automatically adds createdAt and updatedAt
