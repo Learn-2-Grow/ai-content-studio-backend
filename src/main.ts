@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 
 function logStartup(port: any, startupStartTime: bigint): void {
@@ -51,6 +52,7 @@ async function bootstrap(): Promise<void> {
   });
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.use(compression());
 
   const configService: ConfigService = app.get<ConfigService>(ConfigService);

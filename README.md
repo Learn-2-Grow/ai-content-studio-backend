@@ -30,10 +30,84 @@ AI Content Studio is a full-stack application that allows users to generate AI-p
 - ✅ User Authentication (JWT-based)
 - ✅ Content CRUD Operations
 - ✅ AI Content Generation via Google Gemini
-- ✅ Redis Queue (BullMQ) for async job processing
+- ✅ Redis Queue (BullMQ) for async job processing ⚠️ **CRITICAL REQUIREMENT**
 - ✅ Job Status Polling API
 - ✅ MongoDB for data persistence
 - ✅ RESTful API design
+
+### ⚠️ Critical Requirement: Queue System
+
+**The queue system is the core of this assessment.** You MUST:
+
+1. **NOT call AI directly from the backend API**
+2. **Add jobs to Redis queue with 1-minute delay**
+3. **Return immediately with jobId (202 Accepted)**
+4. **Use a separate worker process to process jobs**
+5. **Worker calls Gemini API after the delay**
+6. **Frontend polls for status**
+
+**This is mandatory, not optional!**
+
+---
+
+## 🚀 Quick Start Guide
+
+### Step 1: Clone and Install
+```bash
+# Install dependencies
+npm install
+```
+
+### Step 2: Set Up Environment
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env and add your:
+# - MongoDB URI
+# - JWT Secret
+# - Redis connection details
+# - Gemini API Key
+```
+
+### Step 3: Start Services
+```bash
+# Terminal 1: Start MongoDB (if local)
+# macOS: brew services start mongodb-community
+# Linux: sudo systemctl start mongod
+
+# Terminal 2: Start Redis (if local)
+# macOS: brew services start redis
+# Linux: sudo systemctl start redis
+
+# Verify Redis is running:
+redis-cli ping
+# Should return: PONG
+```
+
+### Step 4: Run Application
+```bash
+# Terminal 1: Start NestJS backend
+npm run start:dev
+
+# Terminal 2: Start worker (REQUIRED!)
+npm run worker:dev
+```
+
+### Step 5: Test API
+```bash
+# Register a user
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test User","email":"test@example.com","password":"password123"}'
+
+# Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}'
+
+# Use the token from login response for authenticated requests
+```
 
 ---
 
@@ -121,6 +195,8 @@ User → Frontend → NestJS API → Redis Queue (BullMQ)
 
 ## 📝 Step-by-Step Implementation Plan
 
+> **📋 For detailed task-by-task checklist, see [IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md)**
+
 ### **Phase 1: Project Setup & Configuration** ✅
 
 - [x] Initialize NestJS project
@@ -130,13 +206,31 @@ User → Frontend → NestJS API → Redis Queue (BullMQ)
 
 **Dependencies to Install:**
 ```bash
+# MongoDB
 npm install @nestjs/mongoose mongoose
+
+# JWT Authentication
 npm install @nestjs/jwt @nestjs/passport passport passport-jwt
+npm install @types/passport-jwt
+
+# Queue System
 npm install @nestjs/bull bull redis
+
+# Password Hashing
 npm install bcryptjs
+npm install @types/bcryptjs
+
+# AI Integration
 npm install @google/generative-ai
+
+# Utilities
 npm install uuid
-npm install @types/bcryptjs @types/passport-jwt @types/uuid
+npm install @types/uuid
+```
+
+**Quick Install (All at once):**
+```bash
+npm install @nestjs/mongoose mongoose @nestjs/jwt @nestjs/passport passport passport-jwt @nestjs/bull bull redis bcryptjs @google/generative-ai uuid @types/bcryptjs @types/passport-jwt @types/uuid
 ```
 
 ---
@@ -339,7 +433,13 @@ npm install @types/bcryptjs @types/passport-jwt @types/uuid
 
 ## 🔐 Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+### Required Variables:
 
 ```env
 # Application
@@ -347,22 +447,46 @@ APP_PORT=3000
 NODE_ENV=development
 
 # MongoDB
+# Local:
 MONGODB_URI=mongodb://localhost:27017/ai-content-studio
-# Or MongoDB Atlas:
+# Or MongoDB Atlas (Cloud):
 # MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ai-content-studio
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
+# JWT Authentication
+JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
 JWT_EXPIRES_IN=7d
 
 # Redis
+# Local:
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=  # Optional, leave empty if no password
+REDIS_PASSWORD=
+# Or Redis Cloud:
+# REDIS_HOST=your-redis-host.redis.cloud.redislabs.com
+# REDIS_PORT=12345
+# REDIS_PASSWORD=your-redis-password
 
 # Google Gemini API
+# Get your API key from: https://makersuite.google.com/app/apikey
 GEMINI_API_KEY=your-gemini-api-key-here
 ```
+
+### Getting API Keys:
+
+1. **MongoDB Atlas** (if using cloud):
+   - Sign up at https://www.mongodb.com/cloud/atlas
+   - Create a free cluster
+   - Get connection string
+
+2. **Redis Cloud** (if using cloud):
+   - Sign up at https://redis.com/try-free/
+   - Create a free database
+   - Get connection details
+
+3. **Google Gemini API**:
+   - Visit https://makersuite.google.com/app/apikey
+   - Create a new API key
+   - Copy to `.env`
 
 ---
 
@@ -406,13 +530,53 @@ npm run worker:dev
 
 ## 🏃 Running the Application
 
+### Prerequisites Before Running
+
+1. **Start MongoDB:**
+   ```bash
+   # macOS
+   brew services start mongodb-community
+   
+   # Linux
+   sudo systemctl start mongod
+   
+   # Windows
+   net start MongoDB
+   
+   # Or use MongoDB Atlas (cloud)
+   ```
+
+2. **Start Redis:**
+   ```bash
+   # macOS
+   brew services start redis
+   
+   # Linux
+   sudo systemctl start redis
+   
+   # Windows
+   # Download Redis from https://redis.io/download
+   
+   # Or use Redis Cloud (cloud)
+   ```
+
+3. **Verify Services:**
+   ```bash
+   # Test MongoDB
+   mongosh
+   
+   # Test Redis
+   redis-cli ping
+   # Should return: PONG
+   ```
+
 ### Development Mode
 
 ```bash
 # Terminal 1: Start NestJS backend
 npm run start:dev
 
-# Terminal 2: Start worker process
+# Terminal 2: Start worker process (REQUIRED for queue processing)
 npm run worker:dev
 
 # Terminal 3: Start frontend (in frontend directory)
@@ -420,17 +584,32 @@ cd ../ai-content-studio-frontend
 npm run dev
 ```
 
+**⚠️ Important:** The worker process MUST be running for content generation to work. The backend only queues jobs; the worker processes them.
+
 ### Production Mode
 
 ```bash
 # Build
 npm run build
 
-# Start backend
+# Start backend (Terminal 1)
 npm run start:prod
 
-# Start worker
+# Start worker (Terminal 2)
 npm run worker:prod
+```
+
+### Adding Worker Scripts to package.json
+
+If the worker scripts don't exist, add them:
+
+```json
+{
+  "scripts": {
+    "worker:dev": "ts-node src/workers/content-generation.worker.ts",
+    "worker:prod": "node dist/workers/content-generation.worker.js"
+  }
+}
 ```
 
 ---
@@ -672,52 +851,120 @@ npm run test:cov
 ```
 ai-content-studio-backend/
 ├── src/
-│   ├── auth/
+│   ├── auth/                          # Authentication Module
 │   │   ├── auth.module.ts
 │   │   ├── auth.controller.ts
 │   │   ├── auth.service.ts
 │   │   ├── strategies/
-│   │   │   └── jwt.strategy.ts
+│   │   │   └── jwt.strategy.ts        # JWT token validation
 │   │   ├── guards/
-│   │   │   └── jwt-auth.guard.ts
+│   │   │   └── jwt-auth.guard.ts      # Route protection
 │   │   └── dto/
-│   │       ├── register.dto.ts
-│   │       └── login.dto.ts
-│   ├── content/
+│   │       ├── register.dto.ts       # Registration validation
+│   │       └── login.dto.ts           # Login validation
+│   │
+│   ├── content/                       # Content CRUD Module
 │   │   ├── content.module.ts
-│   │   ├── content.controller.ts
-│   │   ├── content.service.ts
+│   │   ├── content.controller.ts     # REST endpoints
+│   │   ├── content.service.ts         # Business logic
 │   │   └── dto/
-│   │       ├── create-content.dto.ts
-│   │       └── update-content.dto.ts
-│   ├── database/
-│   │   └── database.module.ts
-│   ├── queue/
-│   │   ├── queue.module.ts
-│   │   └── queue.service.ts
-│   ├── gemini/
+│   │       ├── create-content.dto.ts  # Create validation
+│   │       └── update-content.dto.ts   # Update validation
+│   │
+│   ├── database/                      # Database Configuration
+│   │   └── database.module.ts         # MongoDB connection
+│   │
+│   ├── queue/                         # Queue Module
+│   │   ├── queue.module.ts            # BullMQ configuration
+│   │   └── queue.service.ts           # Queue operations
+│   │
+│   ├── gemini/                        # AI Integration
 │   │   ├── gemini.module.ts
-│   │   └── gemini.service.ts
-│   ├── models/
-│   │   ├── user.schema.ts
-│   │   └── content.schema.ts
-│   ├── workers/
-│   │   └── content-generation.worker.ts
-│   ├── app.module.ts
-│   └── main.ts
-├── .env
-├── .env.example
+│   │   └── gemini.service.ts          # Gemini API calls
+│   │
+│   ├── models/                        # MongoDB Schemas
+│   │   ├── user.schema.ts             # User model
+│   │   └── content.schema.ts          # Content model
+│   │
+│   ├── workers/                       # Background Workers
+│   │   └── content-generation.worker.ts  # Queue processor
+│   │
+│   ├── common/                        # Shared Utilities
+│   │   ├── decorators/
+│   │   │   └── user.decorator.ts      # @User() decorator
+│   │   ├── filters/
+│   │   │   └── http-exception.filter.ts  # Error handling
+│   │   └── guards/
+│   │
+│   ├── app.module.ts                  # Root module
+│   └── main.ts                        # Application entry point
+│
+├── dist/                              # Compiled JavaScript (generated)
+├── test/                              # E2E tests
+├── .env                               # Environment variables (NOT in git)
+├── .env.example                       # Environment template
+├── .gitignore
+├── IMPLEMENTATION_CHECKLIST.md        # 📋 Detailed task checklist
 ├── package.json
-└── README.md
+├── tsconfig.json
+└── README.md                          # This file
 ```
+
+### **Key Files Explained:**
+
+- **`main.ts`**: Application bootstrap, middleware setup
+- **`app.module.ts`**: Root module importing all feature modules
+- **`auth/`**: Handles user registration, login, JWT tokens
+- **`content/`**: CRUD operations for generated content
+- **`queue/`**: BullMQ configuration for Redis queue
+- **`workers/`**: Separate process that processes queued jobs
+- **`gemini/`**: Google Gemini API integration
+- **`models/`**: MongoDB schemas (User, Content)
 
 ---
 
 ## 🎯 Next Steps
 
-1. ✅ Complete Phase 1: Project Setup
-2. ⏭️ Start Phase 2: Database Setup
-3. ⏭️ Continue with remaining phases
+### **Immediate Actions:**
+
+1. **Review the Implementation Checklist**
+   - Open [IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md)
+   - This file contains detailed step-by-step tasks with checkboxes
+
+2. **Start with Phase 1: Project Setup**
+   - Install all dependencies listed above
+   - Create `.env` file with required variables
+   - Set up project folder structure
+
+3. **Follow the Phases Sequentially**
+   - Phase 1: Project Setup ✅ (In Progress)
+   - Phase 2: Database Setup
+   - Phase 3: Authentication Module
+   - Phase 4: Content Module (CRUD)
+   - Phase 5: Queue System (BullMQ) ⚠️ **CRITICAL**
+   - Phase 6: Gemini AI Integration
+   - Phase 7: Error Handling & Validation
+   - Phase 8: Testing
+   - Phase 9: Documentation
+   - Phase 10: Deployment
+
+### **Priority Order:**
+
+1. **Must Complete First:**
+   - Phase 1: Setup
+   - Phase 2: Database
+   - Phase 3: Authentication
+   - Phase 4: Content CRUD
+   - Phase 5: Queue System ⚠️ **This is the core requirement**
+   - Phase 6: Gemini Integration
+
+2. **Then Complete:**
+   - Phase 7: Error Handling
+   - Phase 8: Testing
+   - Phase 9: Documentation
+
+3. **Finally:**
+   - Phase 10: Deployment
 
 ---
 
