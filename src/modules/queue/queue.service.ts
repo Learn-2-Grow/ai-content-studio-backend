@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Job, Queue } from 'bull';
+import { Queue } from 'bull';
 import { QueueName } from './enums/queue.enum';
 
 @Injectable()
@@ -15,8 +15,8 @@ export class QueueService implements OnModuleInit {
 
     onModuleInit() {
 
-        const redisUrl = this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
-        this.logger.log(`Initializing Bull Queue with redis url: ${redisUrl}...`);
+        const redisUrl = this.configService.get<string>('REDIS_URL');
+        this.logger.log(`Initializing Bull Queue with redis url: ${redisUrl}`);
 
         this.contentGeneration.on('ready', () => {
             this.logger.log('Bull Queue connected to Redis successfully');

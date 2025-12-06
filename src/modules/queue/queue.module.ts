@@ -11,7 +11,7 @@ import { QueueService } from './queue.service';
         BullModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => {
-                const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+                const redisUrl = configService.get<string>('REDIS_URL');
 
                 return {
                     redis: redisUrl,
