@@ -59,4 +59,52 @@ export class ContentRepository {
         const contents = await this.contentModel.find(filter).exec();
         return contents?.map(content => content?.toObject() || null) || [];
     }
+
+    /**
+     * Gets the latest content for each thread in the provided threadIds array.
+     * Returns a map of threadId to IContent for efficient lookup.
+     */
+    async findLatestContentByThreadIds(threadIds: string[]): Promise<Map<string, IContent>> {
+        if (!threadIds || threadIds.length === 0) {
+            return new Map();
+        }
+
+        const pipeline: PipelineStage[] = [
+            {
+                $match: {
+                    threadId: { $in: threadIds }
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: '$threadId',
+                    latestContent: { $first: '$$ROOT' }
+                }
+            },
+
+
+        ];
+
+        const results = await this.contentModel.aggregate(pipeline).exec();
+
+        const contentMap = new Map<string, IContent>();
+        results.forEach((result) => {
+            const threadIdString = result._id.toString();
+            if (result.latestContent) {
+                contentMap.set(threadIdString, {
+                    _id: result.latestContent._id,
+                    threadId: result.latestContent.threadId,
+                    status: result.latestContent.status,
+                    statusUpdatedAt: result.latestContent.statusUpdatedAt,
+                    createdAt: result.latestContent.createdAt,
+                    updatedAt: result.latestContent.updatedAt
+                } as IContent);
+            }
+        });
+
+        return contentMap;
+    }
 }

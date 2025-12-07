@@ -144,6 +144,23 @@ export class ThreadService {
             pageSize,
         }
         const pagination = await this.threadRepository.findAll(payload);
+
+        // Fetch latest content for each thread
+        if (pagination?.data && pagination?.data?.length > 0) {
+            const threadIds = pagination.data.map(thread => thread._id.toString());
+            const latestContentMap = await this.contentService.findLatestContentByThreadIds(threadIds);
+
+            // Attach latest content to each thread
+            pagination.data = pagination.data.map(thread => {
+                const threadIdString = thread._id.toString();
+                const latestContent = latestContentMap.get(threadIdString);
+                return {
+                    ...thread,
+                    lastContent: latestContent || undefined,
+                } as IThread;
+            });
+        }
+
         return pagination;
     }
 
