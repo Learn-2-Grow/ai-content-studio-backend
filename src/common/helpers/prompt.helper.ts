@@ -175,7 +175,8 @@ Follow the user's instructions carefully.
         const typeLabel = typeLabels[type] || '';
 
         // Smallest possible prompt: just type + prompt
-        const prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
+        let prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
+        prompt = prompt.trim() + " response within 100 words";
         return { contentPrompt: prompt, titlePrompt: 'provide a short title for the content' };
     }
 }

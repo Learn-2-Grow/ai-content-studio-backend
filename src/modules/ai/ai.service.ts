@@ -1,59 +1,34 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GeminiModel } from 'src/common/enums/gemini.enum';
-import { ExceptionHelper } from 'src/common/helpers/exceptions.helper';
-import { ContentStatus } from '../content/enums/content.enum';
+import { AIProvider } from 'src/common/enums/ai-provider.enum';
+import { IAIContentResponse, IAIProvider } from './interfaces/ai-provider.interface';
+import { GeminiProvider } from './providers/gemini.provider';
+import { OpenRouterProvider } from './providers/openrouter.provider';
 
 @Injectable()
 export class AIService {
     private readonly logger = new Logger(AIService.name);
-    private readonly genAI: GoogleGenerativeAI;
+    private readonly provider: IAIProvider;
+    private readonly openRouterModel: string;
 
-    constructor(private readonly configService: ConfigService) {
-
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (!apiKey) {
-            this.logger.error('GEMINI_API_KEY is not configured');
-            ExceptionHelper.getInstance().defaultError('GEMINI_API_KEY is not configured', 'GEMINI_API_KEY_NOT_CONFIGURED', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        this.genAI = new GoogleGenerativeAI(apiKey);
-        this.logger.log('AI Service initialized with Google Gemini');
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly geminiProvider: GeminiProvider,
+        private readonly openRouterProvider: OpenRouterProvider,
+    ) {
+        const providerType = (this.configService.get<string>('AI_PROVIDER') || AIProvider.GEMINI) as AIProvider;
+        this.openRouterModel = this.configService.get<string>('OPENROUTER_MODEL') || 'openai/gpt-4o';
+        this.provider = providerType === AIProvider.OPENROUTER ? this.openRouterProvider : this.geminiProvider;
+        this.logger.log(`AI Service initialized with ${providerType}`);
     }
 
-    /**
-     * Generates content using Google Gemini API with the provided prompt.
-     * The prompt should already be enhanced with context and type-specific instructions.
-     * Uses gemini-2.0-flash model for faster responses.
-     */
-    async generateContent(prompt: string): Promise<{ content: string, title: string, status: ContentStatus }> {
-        try {
+    async generateContent(prompt: string, model?: string): Promise<IAIContentResponse> {
+        const modelToUse = this.provider === this.openRouterProvider ? model || this.openRouterModel : model;
+        return this.provider.generateContent(prompt, modelToUse);
+    }
 
-            const model = this.genAI.getGenerativeModel({ model: GeminiModel.GEMINI_1_5_FLASH });
-
-            this.logger.log(`Generating content with Google Gemini (${GeminiModel.GEMINI_1_5_FLASH})`);
-
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            const generatedText = response.text();
-            const title = response.text();
-
-            this.logger.log(`Content generated successfully (${generatedText.length} characters)`);
-            return {
-                content: generatedText,
-                title: title,
-                status: ContentStatus.COMPLETED,
-            }
-
-        } catch (error) {
-            this.logger.error(`Error generating content: ${error.message}`, error.stack);
-
-            return {
-                content: '',
-                title: '',
-                status: ContentStatus.FAILED,
-            }
-        }
+    async generateContentWithTitle(contentPrompt: string, titlePrompt: string, model?: string): Promise<IAIContentResponse> {
+        const modelToUse = this.provider === this.openRouterProvider ? model || this.openRouterModel : model;
+        return this.provider.generateContentWithTitle(contentPrompt, titlePrompt, modelToUse);
     }
 }
