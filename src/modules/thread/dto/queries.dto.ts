@@ -12,4 +12,11 @@ export class ThreadQueriesDto {
     @IsOptional()
     @IsString()
     sortOrder?: string;
+
+    @IsOptional()
+    currentPage?: string | number;
+
+    @IsOptional()
+    pageSize?: string | number;
+
 }   

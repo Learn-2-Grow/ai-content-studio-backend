@@ -16,7 +16,8 @@ export class UserService {
 
 
     async findById(userId: string): Promise<IUser | null> {
-        return this.userRepository.findById(userId);
+        const result = await this.userRepository.findById(userId);
+        return result ? result.toObject() : null;
     }
 
     async isActiveByEmail(email: string): Promise<IUser | null> {

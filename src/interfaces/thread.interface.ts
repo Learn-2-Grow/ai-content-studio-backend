@@ -20,3 +20,10 @@ export interface IThreadSummary {
     threadsByType?: Record<string, number>;
     statusCounts?: Record<string, number>;
 }
+
+export interface IThreadPagination {
+    data: IThread[];
+    total: number;
+    currentPage: number;
+    pageSize: number;
+}
