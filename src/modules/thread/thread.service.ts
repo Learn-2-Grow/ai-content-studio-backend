@@ -94,11 +94,11 @@ export class ThreadService {
      * - statusCounts: Count of CONTENTS (not threads) grouped by status (pending, processing, completed, failed)
      */
     async getSummary(user: IUser): Promise<IThreadSummary> {
-        const userIdObject = NestHelper.getInstance().getObjectId(user._id);
 
+        const userId = user._id.toString();
         const [threadStats, contentStatusCounts] = await Promise.all([
-            this.getSummaryByUserId(userIdObject),
-            this.contentService.getStatusCountsByUserId(userIdObject),
+            this.getSummaryByUserId(userId),
+            this.contentService.getStatusCountsByUserId(userId),
         ]);
 
         return {
@@ -110,12 +110,11 @@ export class ThreadService {
 
     async getSummaryByUserId(userId: any): Promise<Partial<IThreadSummary>> {
 
-        const userIdObjectId = NestHelper.getInstance().getObjectId(userId);
 
         // Get totalThreads and threadsByType
         const [totalThreads, threadsByType] = await Promise.all([
-            this.threadRepository.getTotalThreadsByUserId(userIdObjectId),
-            this.threadRepository.getThreadCountsByType(userIdObjectId),
+            this.threadRepository.getTotalThreadsByUserId(userId),
+            this.threadRepository.getThreadCountsByType(userId),
         ]);
 
         // Type map

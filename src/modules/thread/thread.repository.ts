@@ -50,20 +50,16 @@ export class ThreadRepository {
 
     async getThreadCountsByType(userId?: any): Promise<Array<{ _id: string; count: number }>> {
 
-        let userIdObjectId = null;
-        if (userId) {
-            userIdObjectId = NestHelper.getInstance().getObjectId(userId);
-        }
 
         const aggregate: PipelineStage[] = [];
-        if (userIdObjectId) {
-            aggregate.push({ $match: { userId: userIdObjectId } });
+        if (userId) {
+            aggregate.push({ $match: { userId } });
         }
         aggregate.push({ $group: { _id: '$type', count: { $sum: 1 } } });
 
         const threadsByType = await this.threadModel.aggregate(aggregate).exec();
 
-        return threadsByType.map(thread => thread.toObject());
+        return threadsByType;
     }
 
     async findAll(queries: ThreadQueriesDto): Promise<IThreadPagination> {
