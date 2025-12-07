@@ -658,17 +658,90 @@ Content-Type: application/json
 
 ---
 
-### Content Endpoints
+### Thread Endpoints
 
-#### Create Content (Queue Job)
+#### Create Thread
 ```http
-POST /content
+POST /content/threads
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "prompt": "Write a blog outline about climate change",
-  "type": "blog_outline"
+  "title": "AI Healthcare Blog"
+}
+```
+
+**Response:**
+```json
+{
+  "_id": "thread123",
+  "userId": "user123",
+  "title": "AI Healthcare Blog",
+  "status": "active",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+#### Get All Threads
+```http
+GET /content/threads
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "threads": [
+    {
+      "_id": "thread123",
+      "title": "AI Healthcare Blog",
+      "status": "active",
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+#### Get Single Thread
+```http
+GET /content/threads/thread123
+Authorization: Bearer <token>
+```
+
+#### Update Thread
+```http
+PUT /content/threads/thread123
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Updated Title",
+  "status": "archived"
+}
+```
+
+#### Delete Thread
+```http
+DELETE /content/threads/thread123
+Authorization: Bearer <token>
+```
+
+---
+
+### Content Endpoints
+
+#### Generate Content (Queue Job) - As per Requirements
+```http
+POST /generate-content
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "prompt": "Write about AI in healthcare diagnostics",
+  "contentType": "blog_post",
+  "threadId": "thread123"  // Optional: if provided, content added to existing thread
+                            // If not provided, new thread will be auto-created
 }
 ```
 
@@ -676,13 +749,24 @@ Content-Type: application/json
 ```json
 {
   "jobId": "job_789",
+  "threadId": "thread123",  // Thread ID (existing or newly created)
   "message": "Your content generation has been queued. It will process in 1 minute."
 }
 ```
 
-#### Get Job Status
+**Behavior:**
+- **If `threadId` is provided**: Content will be added to that existing thread
+- **If `threadId` is NOT provided**: System will automatically create a new thread with the `contentType` and add content to it
+
+#### Get Job Status - As per Requirements
 ```http
-GET /content/job/job_789/status
+GET /content/:jobId/status
+Authorization: Bearer <token>
+```
+
+**Example:**
+```http
+GET /content/job_789/status
 Authorization: Bearer <token>
 ```
 
@@ -698,31 +782,33 @@ Authorization: Bearer <token>
 {
   "status": "completed",
   "content": {
-    "_id": "c01",
-    "generatedText": "1. Introduction to Climate Change...",
-    "type": "blog_outline",
-    "createdAt": "2025-01-01T00:00:00.000Z"
+    "_id": "content001",
+    "threadId": "thread123",
+    "prompt": "Write about AI in healthcare diagnostics",
+    "generatedContent": "AI is revolutionizing healthcare...",
+    "status": "completed",
+    "createdAt": "2024-01-15T10:30:00Z"
   }
 }
 ```
 
-#### Get All Content
+#### Get All Contents in Thread
 ```http
-GET /content
+GET /content/threads/thread123/contents
 Authorization: Bearer <token>
 ```
 
 **Response:**
 ```json
 {
-  "content": [
+  "contents": [
     {
-      "_id": "c01",
-      "type": "blog_outline",
-      "prompt": "Write a blog outline about climate change",
-      "generatedText": "1. Introduction...",
+      "_id": "content001",
+      "threadId": "thread123",
+      "prompt": "Write about AI in healthcare",
+      "generatedContent": "AI is revolutionizing...",
       "status": "completed",
-      "createdAt": "2025-01-01T00:00:00.000Z"
+      "createdAt": "2024-01-15T10:30:00Z"
     }
   ]
 }
@@ -730,24 +816,37 @@ Authorization: Bearer <token>
 
 #### Get Single Content
 ```http
-GET /content/c01
+GET /content/content001
 Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "_id": "content001",
+  "threadId": "thread123",
+  "prompt": "Write about AI in healthcare",
+  "generatedContent": "AI is revolutionizing healthcare...",
+  "status": "completed",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:05Z"
+}
 ```
 
 #### Update Content
 ```http
-PUT /content/c01
+PUT /content/content001
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "generatedText": "Updated content..."
+  "generatedContent": "Updated content..."
 }
 ```
 
 #### Delete Content
 ```http
-DELETE /content/c01
+DELETE /content/content001
 Authorization: Bearer <token>
 ```
 
@@ -768,35 +867,248 @@ Authorization: Bearer <token>
 }
 ```
 
-### Contents Collection
+---
+
+## 📊 Content Generation Module - Thread-Based Design
+
+The content generation module uses a thread-based architecture where all contents belong to threads. This allows for organized content management and conversation context.
+
+### **Database Schema**
+
+**Tables Required:** 2 tables
+
+#### Table 1: Threads Collection
 
 ```typescript
 {
   _id: ObjectId,
   userId: ObjectId (ref: User),
-  type: String (enum: ['blog_outline', 'caption', 'article', 'social_post']),
-  prompt: String,
-  generatedText: String,
-  status: String (enum: ['pending', 'processing', 'completed', 'failed']),
-  jobId: String (unique, indexed),
+  title: String,
+  type: String (enum: ['blog_post', 'product_description', 'social_media_caption', 'article', 'other']),
+  status: String (enum: ['active', 'archived', 'deleted']),
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
+**Fields:**
+- `_id`: Unique thread identifier
+- `userId`: Owner of the thread (references User)
+- `title`: Thread title
+- `type`: Content type (enum: ['blog_post', 'product_description', 'social_media_caption', 'article', 'other'])
+- `status`: Thread status (active/archived/deleted)
+- `createdAt`: Creation timestamp
+- `updatedAt`: Last update timestamp
+
+#### Table 2: Contents Collection
+
+```typescript
+{
+  _id: ObjectId,
+  threadId: ObjectId (ref: Thread, required),
+  prompt: String,
+  generatedContent: String,
+  status: String (enum: ['pending', 'processing', 'completed', 'failed']),
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+**Fields:**
+- `_id`: Unique content identifier
+- `threadId`: Required reference to thread (links content to thread)
+- `prompt`: User input/prompt for AI generation
+- `generatedContent`: AI-generated content
+- `status`: Content generation status
+- `createdAt`: Creation timestamp
+- `updatedAt`: Last update timestamp
+
+---
+
+### **Structure Visualization**
+
+```
+Thread (userId: "user123", title: "AI Healthcare Blog", type: "blog_post", status: "active")
+  ├── Content 1 (threadId: "thread123", prompt: "Write about AI")
+  ├── Content 2 (threadId: "thread123", prompt: "Make it more technical")
+  └── Content 3 (threadId: "thread123", prompt: "Add statistics")
+```
+
+---
+
+### **Smart Thread Management**
+
+**Auto-Thread Creation:**
+- If `threadId` is **provided** in `/generate-content`: Content is added to that existing thread
+- If `threadId` is **NOT provided**: System automatically creates a new thread with the `contentType` and adds content to it
+
+**Benefits:**
+- ✅ Simplified API: Users don't need to create threads manually
+- ✅ Automatic organization: Threads created based on content type
+- ✅ Flexible: Users can still explicitly manage threads if needed
+
+---
+
+### **Key Characteristics**
+
+- ✅ **Thread-based**: All contents belong to a thread
+- ✅ **User ownership**: User ownership tracked via `threads.userId`
+- ✅ **Thread status**: Threads can be active, archived, or deleted
+- ✅ **Content status**: Each content has its own generation status
+- ✅ **Organized structure**: Threads group related contents together
+- ✅ **Context management**: Contents in same thread share context
+
+---
+
+### **Database Schema Summary**
+
+| Table | Key Fields | Purpose |
+|-------|------------|---------|
+| **threads** | userId, title, status | Container for organizing contents |
+| **contents** | threadId, prompt, generatedContent, status | Individual content generations |
+
+---
+
+### **API Endpoints**
+
+#### Thread Management
+```
+POST   /content/threads                    # Create thread manually (optional - threads auto-created)
+GET    /content/threads                    # List user's threads
+GET    /content/threads/:id               # Get thread details
+PUT    /content/threads/:id               # Update thread (title, type, status)
+DELETE /content/threads/:id               # Delete thread
+```
+
+#### Content Management (As per Requirements)
+```
+POST   /generate-content                  # Generate content (queues job, returns jobId) - REQUIRED
+GET    /content/:jobId/status              # Get job status - REQUIRED
+GET    /content/threads/:id/contents       # Get all contents in thread
+GET    /content/:id                       # Get single content
+PUT    /content/:id                       # Update content
+DELETE /content/:id                       # Delete content
+```
+
+---
+
+### **Example Data Flow**
+
+#### Step 1: Generate Content (Auto-Create Thread)
+```json
+POST /generate-content
+{
+  "prompt": "Write about AI in healthcare diagnostics",
+  "contentType": "blog_post"
+  // threadId not provided - system will auto-create thread
+}
+
+// Response: Creates thread automatically + queues content
+{
+  "jobId": "job_789",
+  "threadId": "thread123",  // Auto-created thread ID
+  "message": "Your content generation has been queued..."
+}
+
+// Thread automatically created:
+{
+  "_id": "thread123",
+  "userId": "user123",
+  "title": "Blog Post Thread",  // Auto-generated or from prompt
+  "type": "blog_post",
+  "status": "active",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+#### Step 2: Generate More Content in Same Thread
+```json
+POST /generate-content
+{
+  "threadId": "thread123",  // Use existing thread
+  "prompt": "Make it more technical",
+  "contentType": "blog_post"
+}
+
+// Response: Creates content record
+{
+  "_id": "content001",
+  "threadId": "thread123",  // ← Required, links to thread
+  "prompt": "Write about AI in healthcare diagnostics",
+  "generatedContent": "",
+  "status": "pending",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+#### Step 3: AI Processes Content
+```json
+// Queue processor picks up job
+// → Calls AI service
+// → Updates content record
+
+{
+  "_id": "content001",
+  "threadId": "thread123",
+  "prompt": "Write about AI in healthcare diagnostics",
+  "generatedContent": "AI is revolutionizing healthcare diagnostics...",
+  "status": "completed",
+  "updatedAt": "2024-01-15T10:30:05Z"
+}
+```
+
+#### Step 3: Generate Content in New Thread
+```json
+POST /generate-content
+{
+  "prompt": "Write a product description for AI software",
+  "contentType": "product_description"
+  // No threadId - creates new thread automatically
+}
+
+// Response: New thread created
+{
+  "jobId": "job_790",
+  "threadId": "thread124",  // New thread auto-created
+  "message": "Your content generation has been queued..."
+}
+
+// Response: Creates new content in same thread
+// System can fetch previous contents in thread for context
+{
+  "_id": "content002",
+  "threadId": "thread123",
+  "prompt": "Make it more technical",
+  "generatedContent": "",
+  "status": "pending",
+  "createdAt": "2024-01-15T10:35:00Z",
+  "updatedAt": "2024-01-15T10:35:00Z"
+}
+```
+
+---
+
+### **Implementation Status**
+
+- ✅ **Thread-based architecture**: Ready for implementation
+- ✅ **Queue integration**: Content generation via queue system
+- ✅ **Context management**: Contents in same thread share context
+
 ---
 
 ## 🔄 Queue Architecture
 
-### Job Flow
+### Job Flow (As per Requirements)
 
-1. **User submits content request** → POST `/content`
-2. **Backend queues job** → BullMQ with 1-minute delay
-3. **Backend returns immediately** → 202 Accepted with `jobId`
-4. **Worker picks job** → After 1 minute
+1. **User submits content request** → POST `/generate-content`
+2. **Backend queues job** → BullMQ with 1-minute delay (60000ms) - REQUIRED
+3. **Backend returns immediately** → 202 Accepted with `jobId` - REQUIRED
+4. **Worker picks job** → After 1 minute delay
 5. **Worker calls Gemini API** → Generate content
 6. **Worker saves to MongoDB** → Update status to 'completed'
-7. **Frontend polls status** → GET `/content/job/:jobId/status`
+7. **Frontend polls status** → GET `/content/:jobId/status` - REQUIRED
 
 ### Queue Configuration
 

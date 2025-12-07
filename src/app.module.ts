@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { ContentModule } from './modules/content/content.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { ThreadModule } from './modules/thread/thread.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { QueueModule } from './modules/queue/queue.module';
     DatabaseModule,
     AuthModule,
     QueueModule,
+    ThreadModule,
+    ContentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
