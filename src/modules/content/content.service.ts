@@ -14,9 +14,9 @@ import { ThreadService } from '../thread/thread.service';
 import { UserService } from '../user/user.service';
 import { ContentRepository } from './content.repository';
 import { GenerateContentDto } from './dto/generate-content.dto';
+import { QueryDto } from './dto/query.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { ContentStatus } from './enums/content.enum';
-import { QueryDto } from './dto/query.dto';
 
 @Injectable()
 export class ContentService {
@@ -213,10 +213,9 @@ export class ContentService {
     /**
      * Gets content status counts.
      */
-    async getStatusCountsByUserId(userId: any): Promise<Record<string, number>> {
+    async getStatusCountsByUserId(threadIds: string[]): Promise<Record<string, number>> {
 
-        const userIdObject = NestHelper.getInstance().getObjectId(userId);
-        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(userIdObject);
+        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(threadIds);
 
         const statusCountsMap: Record<string, number> = {
             [ContentStatus.PENDING]: 0,
@@ -240,5 +239,13 @@ export class ContentService {
         }
         const contents = await this.contentRepository.findAll(filter);
         return contents;
+    }
+
+    /**
+     * Gets the latest content for each thread in the provided threadIds array.
+     * Returns a map of threadId to IContent for efficient lookup.
+     */
+    async findLatestContentByThreadIds(threadIds: string[]): Promise<Map<string, IContent>> {
+        return this.contentRepository.findLatestContentByThreadIds(threadIds);
     }
 }

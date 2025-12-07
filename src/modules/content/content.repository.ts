@@ -43,24 +43,68 @@ export class ContentRepository {
      * Executes aggregation query to get content status counts by userId.
      * Returns raw aggregation results - business logic should be in service layer.
      */
-    async aggregateStatusCountsByUserId(userId: any): Promise<Array<{ _id: string; count: number }>> {
-        let userIdObject = null;
-        if (userId) {
-            userIdObject = NestHelper.getInstance().getObjectId(userId);
-        }
+    async aggregateStatusCountsByUserId(threadIds: string[]): Promise<Array<{ _id: string; count: number }>> {
 
         const aggregate: PipelineStage[] = [];
-        if (userIdObject) {
-            aggregate.push({ $match: { userId: userIdObject } });
+        if (threadIds?.length > 0) {
+            aggregate.push({ $match: { threadId: { $in: threadIds } } });
         }
         aggregate.push({ $group: { _id: '$status', count: { $sum: 1 } } });
 
         const statusCounts = await this.contentModel.aggregate(aggregate).exec();
-        return statusCounts.map(status => status.toObject());
+        return statusCounts;
     }
 
     async findAll(filter: any): Promise<IContent[]> {
         const contents = await this.contentModel.find(filter).exec();
         return contents?.map(content => content?.toObject() || null) || [];
+    }
+
+    /**
+     * Gets the latest content for each thread in the provided threadIds array.
+     * Returns a map of threadId to IContent for efficient lookup.
+     */
+    async findLatestContentByThreadIds(threadIds: string[]): Promise<Map<string, IContent>> {
+        if (!threadIds || threadIds.length === 0) {
+            return new Map();
+        }
+
+        const pipeline: PipelineStage[] = [
+            {
+                $match: {
+                    threadId: { $in: threadIds }
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: '$threadId',
+                    latestContent: { $first: '$$ROOT' }
+                }
+            },
+
+
+        ];
+
+        const results = await this.contentModel.aggregate(pipeline).exec();
+
+        const contentMap = new Map<string, IContent>();
+        results.forEach((result) => {
+            const threadIdString = result._id.toString();
+            if (result.latestContent) {
+                contentMap.set(threadIdString, {
+                    _id: result.latestContent._id,
+                    threadId: result.latestContent.threadId,
+                    status: result.latestContent.status,
+                    statusUpdatedAt: result.latestContent.statusUpdatedAt,
+                    createdAt: result.latestContent.createdAt,
+                    updatedAt: result.latestContent.updatedAt
+                } as IContent);
+            }
+        });
+
+        return contentMap;
     }
 }
