@@ -30,9 +30,9 @@ export class AIService {
     async generateContent(prompt: string): Promise<{ content: string, title: string, status: ContentStatus }> {
         try {
 
-            const model = this.genAI.getGenerativeModel({ model: GeminiModel.GEMINI_2_FLASH });
+            const model = this.genAI.getGenerativeModel({ model: GeminiModel.GEMINI_1_5_FLASH });
 
-            this.logger.log(`Generating content with Google Gemini (${GeminiModel.GEMINI_2_FLASH})`);
+            this.logger.log(`Generating content with Google Gemini (${GeminiModel.GEMINI_1_5_FLASH})`);
 
             const result = await model.generateContent(prompt);
             const response = result.response;
