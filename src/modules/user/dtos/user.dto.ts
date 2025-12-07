@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
-import { IsPasswordValid } from '../../common/validators/custom.validator';
+import { IsPasswordValid } from 'src/common/validators/custom.validator';
 
 export class CreateUserDto {
     @IsNotEmpty({ message: 'Name is required' })

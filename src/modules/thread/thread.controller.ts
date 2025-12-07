@@ -1,14 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { IThreadSummary } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateThreadDto } from './dto/create-thread.dto';
+import { ThreadQueriesDto } from './dto/queries.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { ThreadService } from './thread.service';
 
-@Controller('content/threads')
+@Controller('threads')
 @UseGuards(JwtAuthGuard)
 @UseFilters(HttpExceptionFilter)
 export class ThreadController {
@@ -19,15 +20,18 @@ export class ThreadController {
         return this.threadService.create(user, createThreadDto);
     }
 
-    // @Get()
-    // async findAll(@GetUser() user: any) {
-    //     return this.threadService.findAll(user.userId);
-    // }
+    @Get()
+    async findAll(
+        @GetUser() user: IUser,
+        @Query() threadQueriesDto: ThreadQueriesDto
+    ) {
+        return this.threadService.findAll(user, threadQueriesDto);
+    }
 
-    // @Get(':id')
-    // async findOne(@GetUser() user: any, @Param('id') id: string) {
-    //     return this.threadService.findOne(id, user.userId);
-    // }
+    @Get(':id')
+    async findOne(@GetUser() user: any, @Param('id') id: string) {
+        return this.threadService.findOne(user, id);
+    }
 
     @Put(':id')
     async update(

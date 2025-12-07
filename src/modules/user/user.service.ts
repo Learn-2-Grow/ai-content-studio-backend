@@ -2,8 +2,8 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { IUser } from 'src/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
+import { CreateUserDto } from './dtos/user.dto';
 import { UserType } from './enums/user.enum';
-import { CreateUserDto } from './user.dto';
 import { UserRepository } from './user.repository';
 
 @Injectable()
@@ -57,5 +57,21 @@ export class UserService {
     }
     async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
         return await bcrypt.compare(password, hashedPassword);
+    }
+
+    async me(user: IUser): Promise<IUser> {
+
+        const userData: IUser | null = await this.userRepository.findById(user._id.toString());
+        let sanitizeUser: Partial<IUser> | null = null;
+        if (userData) {
+            sanitizeUser = {
+                _id: userData._id,
+                name: userData.name,
+                email: userData.email,
+                sentiment: userData.sentiment,
+            }
+        }
+
+        return sanitizeUser as IUser;
     }
 }

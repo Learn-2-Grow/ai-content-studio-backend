@@ -17,8 +17,10 @@ export class UserRepository {
     async findByEmail(email: string): Promise<IUser | null> {
         return this.userModel.findOne({ email }).exec();
     }
-    async findById(id: string): Promise<IUser | null> {
-        return this.userModel.findById(id).exec();
+    async findById(id: any): Promise<IUser | null> {
+
+        const userId = NestHelper.getInstance().getObjectId(id);
+        return this.userModel.findById(userId).exec();
     }
     async update(id: any, user: Partial<IUser>): Promise<IUser | null> {
         const userId = NestHelper.getInstance().getObjectId(id);

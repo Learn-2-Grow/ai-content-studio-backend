@@ -16,6 +16,7 @@ import { ContentRepository } from './content.repository';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { ContentStatus } from './enums/content.enum';
+import { QueryDto } from './dto/query.dto';
 
 @Injectable()
 export class ContentService {
@@ -71,7 +72,7 @@ export class ContentService {
         let thread: IThread;
 
         // If threadId not provided, auto-create thread
-        if (!generateContentDto.threadId) {
+        if (!generateContentDto.threadId && generateContentDto.threadId != 'new-thread') {
 
             const title = generateContentDto?.prompt?.split(' ')?.slice(0, 3)?.join(' ') || '';
             thread = await this.threadService.create(user, {
@@ -229,5 +230,15 @@ export class ContentService {
         });
 
         return statusCountsMap;
+    }
+
+    async findAll(queries: QueryDto): Promise<IContent[]> {
+
+        const filter: any = {};
+        if (queries.threadIds) {
+            filter.threadId = { $in: queries.threadIds.map(id => NestHelper.getInstance().getObjectId(id)) };
+        }
+        const contents = await this.contentRepository.findAll(filter);
+        return contents;
     }
 }

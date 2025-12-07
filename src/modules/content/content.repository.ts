@@ -58,4 +58,9 @@ export class ContentRepository {
         const statusCounts = await this.contentModel.aggregate(aggregate).exec();
         return statusCounts.map(status => status.toObject());
     }
+
+    async findAll(filter: any): Promise<IContent[]> {
+        const contents = await this.contentModel.find(filter).exec();
+        return contents?.map(content => content?.toObject() || null) || [];
+    }
 }

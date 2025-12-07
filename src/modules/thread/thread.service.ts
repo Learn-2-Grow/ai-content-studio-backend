@@ -5,6 +5,7 @@ import { IUser } from 'src/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
 import { ContentService } from '../content/content.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
+import { ThreadQueriesDto } from './dto/queries.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { ThreadStatus } from './enums/thread.enum';
 import { ThreadRepository } from './thread.repository';
@@ -125,6 +126,33 @@ export class ThreadService {
 
 
         return { totalThreads, threadsByType: threadsByTypeMap };
+    }
+
+    async findAll(user: IUser, threadQueriesDto: ThreadQueriesDto): Promise<IThread[]> {
+        const payload: ThreadQueriesDto = {
+            userId: user._id.toString(),
+            sortOrder: threadQueriesDto?.sortOrder || 'desc',
+        }
+        const threads = await this.threadRepository.findAll(payload);
+        return threads;
+    }
+
+    async findOne(user: IUser, id: string): Promise<IThread> {
+
+        const idObject = NestHelper.getInstance().getObjectId(id);
+        const thread: IThread = await this.threadRepository.findById(idObject);
+        if (!thread || thread.userId.toString() !== user._id.toString()) {
+            ExceptionHelper.getInstance().defaultError(
+                'Thread not found',
+                'THREAD_NOT_FOUND',
+                HttpStatus.NOT_FOUND,
+            );
+        }
+
+        const contents = await this.contentService.findAll({ threadIds: [id] });
+        thread.contents = contents;
+
+        return thread;
     }
 
 }
