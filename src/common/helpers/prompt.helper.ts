@@ -1,15 +1,12 @@
 import {
+    IAiPrompt,
     IPromptPayload,
-    IPromptResponse,
 } from 'src/interfaces/prompt.interface';
 import { ContentType } from 'src/modules/thread/enums/thread.enum';
 
 export class PromptHelper {
-    /**
-     * Builds enhanced prompts for content generation and title generation
-     * from the provided payload, including context and type-specific instructions.
-     */
-    static buildContentGenerationPrompts(payload: IPromptPayload): IPromptResponse {
+    // Builds prompts for content and title generation from the given payload.
+    static buildContentGenerationPrompts(payload: IPromptPayload): IAiPrompt {
         const { type, history, current } = payload;
 
         const tone = current.tone || 'neutral';
@@ -99,7 +96,9 @@ Generate a short, catchy, human-friendly title for this content thread.
 - Make it relevant and clear for the overall topic.
   `.trim();
 
-        return { contentPrompt, titlePrompt };
+        const sentimentPrompt = ` Analyze the sentiment of this content and return ONE WORD ONLY: positive, negative, or neutral.`;
+
+        return { contentPrompt, titlePrompt, sentimentPrompt };
     }
 
     /**
@@ -155,13 +154,9 @@ Follow the user's instructions carefully.
         }
     }
 
-    /**
-     * Builds a minimal, compact prompt for content generation.
-     * Returns only the essential information in the smallest possible format.
-     * Use this when you need a lightweight prompt with minimal tokens.
-     */
-    static buildSmallPrompt(payload: IPromptPayload): IPromptResponse {
-        const { type, current } = payload;
+    // Short description: Minimal prompt builder for content generation
+    static buildSmallPrompt(payload: IPromptPayload): IAiPrompt {
+        const { type, current, history } = payload;
 
         // Ultra-minimal type labels
         const typeLabels = {
@@ -172,11 +167,22 @@ Follow the user's instructions carefully.
             [ContentType.OTHER]: 'Content',
         };
 
+
         const typeLabel = typeLabels[type] || '';
 
-        // Smallest possible prompt: just type + prompt
+        // Smallest possible prompt: just type + prompt and skip history
         let prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
         prompt = prompt.trim() + " response within 100 words";
-        return { contentPrompt: prompt, titlePrompt: 'provide a short title for the content' };
+        const sentimentPrompt = ` Analyze the sentiment of this content and return ONE WORD ONLY: positive, negative, or neutral.`;
+        const titlePrompt = 'provide a short title for the content within 3-5 words';
+        return { contentPrompt: prompt, titlePrompt, sentimentPrompt };
+    }
+
+    static setExpectedPromptResponseFormat(prompt: IAiPrompt): void {
+        prompt.expectedResponseFormat = `{
+            "content": "string",
+            "title": "string",
+            "sentiment": "positive, negative, or neutral"
+        }`.trim();
     }
 }

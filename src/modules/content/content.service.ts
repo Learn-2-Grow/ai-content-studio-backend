@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { NestHelper } from 'src/common/helpers/nest.helper';
 import { PromptHelper } from 'src/common/helpers/prompt.helper';
 import { IContent } from 'src/interfaces/content.interface';
-import { IPromptPayload } from 'src/interfaces/prompt.interface';
+import { IAiPrompt, IPromptPayload } from 'src/interfaces/prompt.interface';
 import { IJobData } from 'src/interfaces/queue.interface';
 import { IThread } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
@@ -11,6 +11,7 @@ import { AIService } from '../ai/ai.service';
 import { QueueProcess } from '../queue/enums/queue.enum';
 import { QueueService } from '../queue/queue.service';
 import { ThreadService } from '../thread/thread.service';
+import { UserService } from '../user/user.service';
 import { ContentRepository } from './content.repository';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
@@ -25,6 +26,7 @@ export class ContentService {
         private readonly threadService: ThreadService,
         private readonly queueService: QueueService,
         private readonly aiService: AIService,
+        private readonly userService: UserService,
     ) { }
 
     async generateContent(user: IUser, generateContentDto: GenerateContentDto): Promise<IThread> {
@@ -41,10 +43,12 @@ export class ContentService {
             contentId: jobId,
             userId: user._id.toString(),
             threadId: thread._id.toString(),
+            provider: generateContentDto.provider, // Pass provider to job
         };
 
         // Add job to queue with 1-minute delay
-        await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 3 });
+        // await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 3 });
+        await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 5000, attempts: 3 });
 
         this.logger.log(`Content generation job queued: ${jobId} for thread: ${thread._id}`);
 
@@ -104,22 +108,26 @@ export class ContentService {
         const { content, thread, previousContents } = await this.fetchJobData(jobData);
         if (!content || !thread) return;
 
-        const promptPayload = this.buildPromptPayload(content, thread, previousContents);
-        // const aiPrompts = PromptHelper.buildContentGenerationPrompts(payload);
-        const aiPrompts = PromptHelper.buildSmallPrompt(promptPayload);
+        const promptPayload: IPromptPayload = this.buildGeneralPromptPayload(content, thread, previousContents);
 
+        const aiPrompt: IAiPrompt = PromptHelper.buildSmallPrompt(promptPayload);
+        PromptHelper.setExpectedPromptResponseFormat(aiPrompt);
+        const aiResponse = await this.aiService.generateContent(aiPrompt, jobData.provider);
 
-        const aiResponse = aiPrompts.titlePrompt
-            ? await this.aiService.generateContentWithTitle(aiPrompts.contentPrompt, aiPrompts.titlePrompt)
-            : await this.aiService.generateContent(aiPrompts.contentPrompt);
+        this.logger.log(`AI response: ${JSON.stringify(aiResponse)}`);
 
         await this.contentRepository.update(content._id, {
             generatedContent: aiResponse.content,
             status: aiResponse.status,
         });
 
-        if (aiResponse.status === ContentStatus.COMPLETED && aiResponse.title && previousContents?.length > 0) {
+        // Update thread title if it's the first content in the thread
+        if (aiResponse.status === ContentStatus.COMPLETED && aiResponse.title && previousContents?.length === 0) {
             await this.threadService.updateTitle(thread._id, aiResponse.title);
+        }
+
+        if (aiResponse.sentiment) {
+            await this.userService.updateSentiment(jobData.userId, aiResponse.sentiment);
         }
     }
 
@@ -134,11 +142,11 @@ export class ContentService {
         return { content, thread, previousContents };
     }
 
-    buildPromptPayload(content: IContent, thread: IThread, previousContents: IContent[]): IPromptPayload {
+    buildGeneralPromptPayload(content: IContent, thread: IThread, previousContents: IContent[]): IPromptPayload {
 
-        const previousResponses = previousContents.length > 0
+        const previousResponses = previousContents?.length > 0
             ? previousContents.map(c => ({ prompt: c.prompt, response: c.generatedContent }))
-            : null;
+            : [];
 
         return {
             type: thread.type,
@@ -199,5 +207,27 @@ export class ContentService {
         await this.findOne(id, userId);
         await this.contentRepository.delete(id);
         this.logger.log(`Content deleted: ${id} by user: ${userId}`);
+    }
+
+    /**
+     * Gets content status counts.
+     */
+    async getStatusCountsByUserId(userId: any): Promise<Record<string, number>> {
+
+        const userIdObject = NestHelper.getInstance().getObjectId(userId);
+        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(userIdObject);
+
+        const statusCountsMap: Record<string, number> = {
+            [ContentStatus.PENDING]: 0,
+            [ContentStatus.PROCESSING]: 0,
+            [ContentStatus.COMPLETED]: 0,
+            [ContentStatus.FAILED]: 0,
+        };
+
+        statusCounts.forEach((item) => {
+            statusCountsMap[item._id as ContentStatus] = item.count;
+        });
+
+        return statusCountsMap;
     }
 }

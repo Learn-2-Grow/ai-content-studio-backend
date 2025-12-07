@@ -1,8 +1,9 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IThread } from 'src/interfaces/thread.interface';
+import { IThread, IThreadSummary } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
+import { ContentService } from '../content/content.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { ThreadStatus } from './enums/thread.enum';
@@ -14,6 +15,8 @@ export class ThreadService {
 
     constructor(
         private readonly threadRepository: ThreadRepository,
+        @Inject(forwardRef(() => ContentService))
+        private readonly contentService: ContentService,
     ) { }
 
     async create(user: IUser, createThreadDto: CreateThreadDto): Promise<IThread> {
@@ -81,6 +84,47 @@ export class ThreadService {
         }
         await this.threadRepository.delete(id);
         this.logger.log(`Thread deleted: ${id} by user: ${userId}`);
+    }
+
+    /**
+     * Gets summary statistics for the user:
+     * - totalThreads: Total number of threads
+     * - threadsByType: Count of threads grouped by content type
+     * - statusCounts: Count of CONTENTS (not threads) grouped by status (pending, processing, completed, failed)
+     */
+    async getSummary(user: IUser): Promise<IThreadSummary> {
+        const userIdObject = NestHelper.getInstance().getObjectId(user._id);
+
+        const [threadStats, contentStatusCounts] = await Promise.all([
+            this.getSummaryByUserId(userIdObject),
+            this.contentService.getStatusCountsByUserId(userIdObject),
+        ]);
+
+        return {
+            totalThreads: threadStats.totalThreads,
+            threadsByType: threadStats.threadsByType,
+            statusCounts: contentStatusCounts,
+        };
+    }
+
+    async getSummaryByUserId(userId: any): Promise<Partial<IThreadSummary>> {
+
+        const userIdObjectId = NestHelper.getInstance().getObjectId(userId);
+
+        // Get totalThreads and threadsByType
+        const [totalThreads, threadsByType] = await Promise.all([
+            this.threadRepository.getTotalThreadsByUserId(userIdObjectId),
+            this.threadRepository.getThreadCountsByType(userIdObjectId),
+        ]);
+
+        // Type map
+        const threadsByTypeMap: Record<string, number> = {};
+        threadsByType.forEach((item) => {
+            threadsByTypeMap[item._id] = item.count;
+        });
+
+
+        return { totalThreads, threadsByType: threadsByTypeMap };
     }
 
 }

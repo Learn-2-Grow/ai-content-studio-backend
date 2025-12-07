@@ -19,7 +19,9 @@ export interface IPromptPayload {
     current: IPromptCurrentRequest;
 }
 
-export interface IPromptResponse {
+export interface IAiPrompt {
     contentPrompt: string;
     titlePrompt: string;
+    sentimentPrompt: string;
+    expectedResponseFormat?: string;
 }

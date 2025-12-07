@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
+import { IThreadSummary } from 'src/interfaces/thread.interface';
+import { IUser } from 'src/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -40,5 +42,10 @@ export class ThreadController {
     async remove(@GetUser() user: any, @Param('id') id: string) {
         await this.threadService.remove(id, user.userId);
         return { message: 'Thread deleted successfully' };
+    }
+
+    @Get('summary')
+    async getSummary(@GetUser() user: IUser): Promise<IThreadSummary> {
+        return this.threadService.getSummary(user);
     }
 }

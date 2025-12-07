@@ -13,3 +13,10 @@ export interface IThread extends Document {
     contents?: IContent[];
     lastContent?: IContent;
 }
+
+
+export interface IThreadSummary {
+    totalThreads?: number;
+    threadsByType?: Record<string, number>;
+    statusCounts?: Record<string, number>;
+}

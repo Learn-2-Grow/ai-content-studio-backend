@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AxiosHelper } from 'src/common/helpers/axios.helper';
+import { IAiPrompt } from 'src/interfaces/prompt.interface';
 import { ContentStatus } from '../../content/enums/content.enum';
 import { IAIContentResponse, IAIProvider } from '../interfaces/ai-provider.interface';
 
@@ -10,11 +12,14 @@ export class OpenRouterProvider implements IAIProvider {
     private readonly siteUrl: string;
     private readonly siteName: string;
     private readonly apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+    private readonly axiosHelper: AxiosHelper;
 
     constructor(private readonly configService: ConfigService) {
+
         this.apiKey = this.configService.get<string>('OPENROUTER_API_KEY') || '';
         this.siteUrl = this.configService.get<string>('OPENROUTER_SITE_URL') || 'https://ai-content-studio.com';
         this.siteName = this.configService.get<string>('OPENROUTER_SITE_NAME') || 'AI Content Studio';
+        this.axiosHelper = AxiosHelper.getInstance();
 
         if (!this.apiKey) {
             this.logger.error('OPENROUTER_API_KEY is not configured in environment variables');
@@ -23,16 +28,13 @@ export class OpenRouterProvider implements IAIProvider {
         this.logger.log(`OpenRouter provider initialized with API key: ${this.apiKey.substring(0, 10)}...`);
     }
 
-    /**
-     * Generates content using OpenRouter REST API with any available model.
-     * @param prompt - The prompt to send to the model
-     * @param model - The model identifier (e.g., 'openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'google/gemini-pro')
-     * @returns Generated content response
-     */
+    // Generate content using OpenRouter API based on aiPrompt (single call with structured response)
     async generateContent(
-        prompt: string,
+        aiPrompt: IAiPrompt,
         model: string = 'openai/gpt-4o',
     ): Promise<IAIContentResponse> {
+
+        const max_tokens = 1000;
         try {
             if (!this.apiKey) {
                 throw new Error('OPENROUTER_API_KEY is not configured');
@@ -40,118 +42,70 @@ export class OpenRouterProvider implements IAIProvider {
 
             this.logger.log(`Generating content with OpenRouter model: ${model}`);
 
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${this.apiKey}`,
-                    'HTTP-Referer': this.siteUrl,
-                    'X-Title': this.siteName,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt,
-                        },
-                    ],
-                    max_tokens: 8000,
-                }),
-            });
+            // Combined prompt
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+            let combinedPrompt = `${aiPrompt.contentPrompt}\n\n${aiPrompt.titlePrompt}\n\n${aiPrompt.sentimentPrompt}`;
+
+            if (aiPrompt.expectedResponseFormat) {
+                combinedPrompt += `\n\nPlease respond in JSON format:\n${aiPrompt.expectedResponseFormat}`;
             }
 
-            const data = await response.json();
-            const content = data.choices?.[0]?.message?.content || '';
+            const requestBody: any = {
+                model: model,
+                messages: [
+                    {
+                        role: 'user',
+                        content: combinedPrompt,
+                    },
+                ],
+                max_tokens: max_tokens,
+            };
+
+            if (aiPrompt.expectedResponseFormat) {
+                requestBody.response_format = { type: 'json_object' };
+            }
+
+            const responseData = await this.axiosHelper.post(
+                this.apiUrl,
+                requestBody,
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.apiKey}`,
+                        'HTTP-Referer': this.siteUrl,
+                        'X-Title': this.siteName,
+                    },
+                },
+            );
+
+            const responseText = responseData.choices?.[0]?.message?.content || '';
+
+            if (aiPrompt.expectedResponseFormat) {
+                try {
+                    const parsedResponse = JSON.parse(responseText);
+                    const content = parsedResponse.content || '';
+                    const title = parsedResponse.title || content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
+                    const sentiment = parsedResponse.sentiment || null;
+
+                    this.logger.log(`Content generated successfully (${content.length} characters)`);
+                    return { content, title, status: ContentStatus.COMPLETED, sentiment };
+                } catch (parseError) {
+                    this.logger.warn(`Failed to parse JSON response, falling back to text parsing: ${parseError.message}`);
+                }
+            }
+
+            // Fallback: extract from text response
+            const content = responseText;
             const title = content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
+            const sentiment: string | null = null;
 
             this.logger.log(`Content generated successfully (${content.length} characters)`);
 
-            return { content, title, status: ContentStatus.COMPLETED };
+            return { content, title, status: ContentStatus.COMPLETED, sentiment };
         } catch (error) {
             this.logger.error(`Error generating content with OpenRouter: ${error.message}`, error.stack);
-            return { content: '', title: '', status: ContentStatus.FAILED };
+            return { content: '', title: '', status: ContentStatus.FAILED, sentiment: null };
         }
     }
 
-    /**
-     * Generates both content and title using separate prompts
-     */
-    async generateContentWithTitle(
-        contentPrompt: string,
-        titlePrompt: string,
-        model: string = 'openai/gpt-4o',
-    ): Promise<IAIContentResponse> {
-        try {
-            if (!this.apiKey) {
-                throw new Error('OPENROUTER_API_KEY is not configured');
-            }
 
-            this.logger.log(`Generating content and title with OpenRouter model: ${model}`);
-
-            const headers = {
-                Authorization: `Bearer ${this.apiKey}`,
-                'HTTP-Referer': this.siteUrl,
-                'X-Title': this.siteName,
-                'Content-Type': 'application/json',
-            };
-
-            // Generate content and title in parallel
-            const [contentResponse, titleResponse] = await Promise.all([
-                fetch(this.apiUrl, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        model: model,
-                        messages: [
-                            {
-                                role: 'user',
-                                content: contentPrompt,
-                            },
-                        ],
-                        max_tokens: 8000,
-                    }),
-                }),
-                fetch(this.apiUrl, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        model: model,
-                        messages: [
-                            {
-                                role: 'user',
-                                content: titlePrompt,
-                            },
-                        ],
-                        max_tokens: 200,
-                    }),
-                }),
-            ]);
-
-            if (!contentResponse.ok || !titleResponse.ok) {
-                const contentError = contentResponse.ok ? '' : await contentResponse.text();
-                const titleError = titleResponse.ok ? '' : await titleResponse.text();
-                throw new Error(`OpenRouter API error - Content: ${contentError}, Title: ${titleError}`);
-            }
-
-            const [contentData, titleData] = await Promise.all([
-                contentResponse.json(),
-                titleResponse.json(),
-            ]);
-
-            const content = contentData.choices?.[0]?.message?.content || '';
-            const title = titleData.choices?.[0]?.message?.content?.trim() || content.split(/[.!?]/)[0]?.trim() || '';
-
-            this.logger.log(`Content and title generated successfully`);
-
-            return { content, title, status: ContentStatus.COMPLETED };
-        } catch (error) {
-            this.logger.error(`Error generating content with OpenRouter: ${error.message}`, error.stack);
-            return { content: '', title: '', status: ContentStatus.FAILED };
-        }
-    }
 }

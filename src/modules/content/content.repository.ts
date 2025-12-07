@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { NestHelper } from 'src/common/helpers/nest.helper';
 import { IContent } from 'src/interfaces/content.interface';
 import { Content, ContentDocument } from './entities/content.entity';
@@ -37,5 +37,25 @@ export class ContentRepository {
         // Using _id as jobId
         const content = await this.contentModel.findById(jobId).exec();
         return content?.toObject() || null;
+    }
+
+    /**
+     * Executes aggregation query to get content status counts by userId.
+     * Returns raw aggregation results - business logic should be in service layer.
+     */
+    async aggregateStatusCountsByUserId(userId: any): Promise<Array<{ _id: string; count: number }>> {
+        let userIdObject = null;
+        if (userId) {
+            userIdObject = NestHelper.getInstance().getObjectId(userId);
+        }
+
+        const aggregate: PipelineStage[] = [];
+        if (userIdObject) {
+            aggregate.push({ $match: { userId: userIdObject } });
+        }
+        aggregate.push({ $group: { _id: '$status', count: { $sum: 1 } } });
+
+        const statusCounts = await this.contentModel.aggregate(aggregate).exec();
+        return statusCounts.map(status => status.toObject());
     }
 }
