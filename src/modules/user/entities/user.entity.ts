@@ -19,6 +19,9 @@ export class User {
 
     @Prop({ required: true, enum: UserType })
     userType: UserType;
+
+    @Prop({ required: false, trim: true })
+    sentiment: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

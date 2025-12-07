@@ -1,4 +1,5 @@
 import { Document, Types } from 'mongoose';
+import { AIProvider } from 'src/common/enums/ai-provider.enum';
 import { ContentStatus } from 'src/modules/content/enums/content.enum';
 
 export interface IContent extends Document {
@@ -10,4 +11,5 @@ export interface IContent extends Document {
     statusUpdatedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
+    provider?: AIProvider;
 }

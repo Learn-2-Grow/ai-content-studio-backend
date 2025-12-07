@@ -1,7 +1,8 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { NestHelper } from 'src/common/helpers/nest.helper';
 import { IThread } from 'src/interfaces/thread.interface';
+import { ThreadQueriesDto } from './dto/queries.dto';
 import { Thread, ThreadDocument } from './entities/thread.entity';
 
 export class ThreadRepository {
@@ -40,5 +41,47 @@ export class ThreadRepository {
         const userIdObjectId = NestHelper.getInstance().getObjectId(userId);
         const thread = await this.threadModel.findOne({ _id: id, userId: userIdObjectId }).exec();
         return thread?.toObject() || null;
+    }
+
+    async getTotalThreadsByUserId(userId: any): Promise<number> {
+        const userIdObjectId = NestHelper.getInstance().getObjectId(userId);
+        return this.threadModel.countDocuments({ userId: userIdObjectId }).exec();
+    }
+
+    async getThreadCountsByType(userId?: any): Promise<Array<{ _id: string; count: number }>> {
+
+        let userIdObjectId = null;
+        if (userId) {
+            userIdObjectId = NestHelper.getInstance().getObjectId(userId);
+        }
+
+        const aggregate: PipelineStage[] = [];
+        if (userIdObjectId) {
+            aggregate.push({ $match: { userId: userIdObjectId } });
+        }
+        aggregate.push({ $group: { _id: '$type', count: { $sum: 1 } } });
+
+        const threadsByType = await this.threadModel.aggregate(aggregate).exec();
+
+        return threadsByType.map(thread => thread.toObject());
+    }
+
+    async findAll(queries: ThreadQueriesDto): Promise<IThread[]> {
+
+        const filter: any = {};
+        let sortOrder: 1 | -1 = 1;
+        if (queries?.sortOrder && queries.sortOrder === 'desc') {
+            sortOrder = -1;
+        }
+
+        if (queries?.threadIds) {
+            filter.threadId = { $in: queries.threadIds.map(id => NestHelper.getInstance().getObjectId(id)) };
+        }
+        if (queries?.userId) {
+            filter.userId = NestHelper.getInstance().getObjectId(queries.userId);
+        }
+        const threads = await this.threadModel.find(filter).sort({ createdAt: sortOrder }).exec();
+        const threadsData: IThread[] = threads.map(thread => thread.toObject());
+        return threadsData;
     }
 }

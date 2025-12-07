@@ -9,4 +9,5 @@ export interface IUser extends Document {
     userType: UserType;
     createdAt?: Date;
     updatedAt?: Date;
+    sentiment?: string;
 }
