@@ -105,9 +105,13 @@ export class ContentService {
         if (!content || !thread) return;
 
         const promptPayload = this.buildPromptPayload(content, thread, previousContents);
-        // const aiPrompts = PromptHelper.buildContentGenerationPrompts(promptPayload);
+        // const aiPrompts = PromptHelper.buildContentGenerationPrompts(payload);
         const aiPrompts = PromptHelper.buildSmallPrompt(promptPayload);
-        const aiResponse = await this.aiService.generateContent(aiPrompts.contentPrompt);
+
+
+        const aiResponse = aiPrompts.titlePrompt
+            ? await this.aiService.generateContentWithTitle(aiPrompts.contentPrompt, aiPrompts.titlePrompt)
+            : await this.aiService.generateContent(aiPrompts.contentPrompt);
 
         await this.contentRepository.update(content._id, {
             generatedContent: aiResponse.content,
