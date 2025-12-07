@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
-import { IThreadSummary } from 'src/interfaces/thread.interface';
+import { IThreadPagination, IThreadSummary } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -24,7 +24,7 @@ export class ThreadController {
     async findAll(
         @GetUser() user: IUser,
         @Query() threadQueriesDto: ThreadQueriesDto
-    ) {
+    ): Promise<IThreadPagination> {
         return this.threadService.findAll(user, threadQueriesDto);
     }
 

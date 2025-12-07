@@ -1,6 +1,6 @@
 import { forwardRef, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IThread, IThreadSummary } from 'src/interfaces/thread.interface';
+import { IThread, IThreadPagination, IThreadSummary } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
 import { ContentService } from '../content/content.service';
@@ -128,13 +128,19 @@ export class ThreadService {
         return { totalThreads, threadsByType: threadsByTypeMap };
     }
 
-    async findAll(user: IUser, threadQueriesDto: ThreadQueriesDto): Promise<IThread[]> {
+    async findAll(user: IUser, threadQueriesDto: ThreadQueriesDto): Promise<IThreadPagination> {
+
+        const currentPage = threadQueriesDto?.currentPage ? parseInt(threadQueriesDto.currentPage?.toString() || '1') : 1;
+        const pageSize = threadQueriesDto?.pageSize ? parseInt(threadQueriesDto.pageSize?.toString() || '10') : 10;
+
         const payload: ThreadQueriesDto = {
             userId: user._id.toString(),
             sortOrder: threadQueriesDto?.sortOrder || 'desc',
+            currentPage,
+            pageSize,
         }
-        const threads = await this.threadRepository.findAll(payload);
-        return threads;
+        const pagination = await this.threadRepository.findAll(payload);
+        return pagination;
     }
 
     async findOne(user: IUser, id: string): Promise<IThread> {

@@ -1,7 +1,7 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IThread } from 'src/interfaces/thread.interface';
+import { IThread, IThreadPagination } from 'src/interfaces/thread.interface';
 import { ThreadQueriesDto } from './dto/queries.dto';
 import { Thread, ThreadDocument } from './entities/thread.entity';
 
@@ -66,7 +66,7 @@ export class ThreadRepository {
         return threadsByType.map(thread => thread.toObject());
     }
 
-    async findAll(queries: ThreadQueriesDto): Promise<IThread[]> {
+    async findAll(queries: ThreadQueriesDto): Promise<IThreadPagination> {
 
         const filter: any = {};
         let sortOrder: 1 | -1 = 1;
@@ -75,13 +75,57 @@ export class ThreadRepository {
         }
 
         if (queries?.threadIds) {
-            filter.threadId = { $in: queries.threadIds.map(id => NestHelper.getInstance().getObjectId(id)) };
+            filter._id = { $in: queries.threadIds.map(id => NestHelper.getInstance().getObjectId(id)) };
         }
         if (queries?.userId) {
-            filter.userId = NestHelper.getInstance().getObjectId(queries.userId);
+            // Use userId as string (matching findByUserId which works)
+            // Even though schema has ref: 'User', the data is stored as string
+            filter.userId = queries.userId;
         }
-        const threads = await this.threadModel.find(filter).sort({ createdAt: sortOrder }).exec();
-        const threadsData: IThread[] = threads.map(thread => thread.toObject());
-        return threadsData;
+
+        // Parse pagination parameters
+        const currentPage = queries?.currentPage ? parseInt(queries.currentPage.toString(), 10) : 1;
+        const pageSize = queries?.pageSize ? parseInt(queries.pageSize.toString(), 10) : 10;
+        const skip = (currentPage - 1) * pageSize;
+
+        // Use aggregation with $facet to get both count and data in a single database call
+        const pipeline: PipelineStage[] = [
+            { $match: filter },
+            {
+                $facet: {
+                    total: [{ $count: 'count' }],
+                    data: [
+                        { $sort: { createdAt: sortOrder } },
+                        { $skip: skip },
+                        { $limit: pageSize },
+                    ],
+                },
+            },
+        ];
+
+        const result = await this.threadModel.aggregate(pipeline).exec();
+
+        // Handle aggregation result structure
+        if (!result || result.length === 0) {
+            return {
+                data: [],
+                total: 0,
+                currentPage,
+                pageSize,
+            };
+        }
+
+        const facetResult = result[0] || { total: [], data: [] };
+        const total = facetResult.total?.[0]?.count || 0;
+        const threadsData: IThread[] = facetResult.data || [];
+
+        const pagination: IThreadPagination = {
+            data: threadsData,
+            total,
+            currentPage,
+            pageSize,
+        };
+
+        return pagination;
     }
 }
