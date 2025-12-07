@@ -11,21 +11,22 @@ export class ContentRepository {
 
     async create(content: Partial<IContent>): Promise<IContent> {
         const contentDoc = await this.contentModel.create(content);
-        return contentDoc;
+        return contentDoc.toObject();
     }
 
     async findById(id: string): Promise<IContent | null> {
         return this.contentModel.findById(id).exec();
     }
 
-    async findByThreadId(threadId: any): Promise<IContent[]> {
+    async findByThreadId(threadId: any, currentContentId: any): Promise<IContent[]> {
         const threadIdObject = NestHelper.getInstance().getObjectId(threadId);
-        return this.contentModel.find({ threadId: threadIdObject }).sort({ createdAt: -1 }).exec();
+        return this.contentModel.find({ threadId: threadIdObject, _id: { $ne: currentContentId } }).sort({ createdAt: -1 }).exec();
     }
 
     async update(id: any, content: Partial<IContent>): Promise<IContent | null> {
         const idObject = NestHelper.getInstance().getObjectId(id);
-        return this.contentModel.findByIdAndUpdate(idObject, content, { new: true }).exec();
+        const updatedContent = await this.contentModel.findByIdAndUpdate(idObject, content, { new: true }).exec();
+        return updatedContent.toObject();
     }
 
     async delete(id: string): Promise<IContent | null> {
@@ -34,6 +35,7 @@ export class ContentRepository {
 
     async findByJobId(jobId: string): Promise<IContent | null> {
         // Using _id as jobId
-        return this.contentModel.findById(jobId).exec();
+        const content = await this.contentModel.findById(jobId).exec();
+        return content?.toObject() || null;
     }
 }

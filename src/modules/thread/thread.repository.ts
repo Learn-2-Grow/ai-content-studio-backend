@@ -11,21 +11,24 @@ export class ThreadRepository {
 
     async create(thread: Partial<IThread>): Promise<IThread> {
         const threadDoc = await this.threadModel.create(thread);
-        return threadDoc;
+        return threadDoc.toObject();
     }
 
     async findById(id: any): Promise<IThread | null> {
         const idObject = NestHelper.getInstance().getObjectId(id);
-        return this.threadModel.findById(idObject).exec();
+        const thread = await this.threadModel.findById(idObject).exec();
+        return thread?.toObject() || null;
     }
 
     async findByUserId(userId: string): Promise<IThread[]> {
-        return this.threadModel.find({ userId, status: { $ne: 'deleted' } }).sort({ createdAt: -1 }).exec();
+        const threads = await this.threadModel.find({ userId, status: { $ne: 'deleted' } }).sort({ createdAt: -1 }).exec();
+        return threads.map(thread => thread.toObject());
     }
 
     async update(id: any, thread: Partial<IThread>): Promise<IThread | null> {
         const idObject = NestHelper.getInstance().getObjectId(id);
-        return this.threadModel.findByIdAndUpdate(idObject, thread, { new: true }).exec();
+        const updatedThread = await this.threadModel.findByIdAndUpdate(idObject, thread, { new: true }).exec();
+        return updatedThread?.toObject() || null;
     }
 
     async delete(id: string): Promise<IThread | null> {
@@ -35,6 +38,7 @@ export class ThreadRepository {
 
     async findByIdAndUserId(id: string, userId: any): Promise<IThread | null> {
         const userIdObjectId = NestHelper.getInstance().getObjectId(userId);
-        return this.threadModel.findOne({ _id: id, userId: userIdObjectId }).exec();
+        const thread = await this.threadModel.findOne({ _id: id, userId: userIdObjectId }).exec();
+        return thread?.toObject() || null;
     }
 }

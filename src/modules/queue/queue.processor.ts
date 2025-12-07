@@ -16,11 +16,12 @@ export class QueueProcessor {
 
     @Process(QueueProcess.GENERATE_CONTENT)
     async handleGenerateContentJob(job: Job) {
+
         const jobData = job.data as IJobData;
         this.logger.log(`Processing content generation job: ${jobData.contentId} for thread: ${jobData.threadId}`);
 
         try {
-            await this.contentService.executeContentGeneration(jobData);
+            await this.contentService.processContentJob(jobData);
 
             this.logger.log(`Content generation completed: ${jobData.contentId}`);
         } catch (error) {

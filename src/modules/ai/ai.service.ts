@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GeminiModel } from 'src/common/enums/gemini.enum';
 import { ExceptionHelper } from 'src/common/helpers/exceptions.helper';
 import { ContentStatus } from '../content/enums/content.enum';
 
@@ -28,9 +29,10 @@ export class AIService {
      */
     async generateContent(prompt: string): Promise<{ content: string, title: string, status: ContentStatus }> {
         try {
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-            this.logger.log('Generating content with Google Gemini (gemini-2.0-flash)');
+            const model = this.genAI.getGenerativeModel({ model: GeminiModel.GEMINI_2_FLASH });
+
+            this.logger.log(`Generating content with Google Gemini (${GeminiModel.GEMINI_2_FLASH})`);
 
             const result = await model.generateContent(prompt);
             const response = result.response;

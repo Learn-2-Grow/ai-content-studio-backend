@@ -154,4 +154,28 @@ Follow the user's instructions carefully.
       `.trim();
         }
     }
+
+    /**
+     * Builds a minimal, compact prompt for content generation.
+     * Returns only the essential information in the smallest possible format.
+     * Use this when you need a lightweight prompt with minimal tokens.
+     */
+    static buildSmallPrompt(payload: IPromptPayload): IPromptResponse {
+        const { type, current } = payload;
+
+        // Ultra-minimal type labels
+        const typeLabels = {
+            [ContentType.BLOG_POST]: 'Blog',
+            [ContentType.PRODUCT_DESCRIPTION]: 'Product',
+            [ContentType.SOCIAL_MEDIA_CAPTION]: 'Caption',
+            [ContentType.ARTICLE]: 'Article',
+            [ContentType.OTHER]: 'Content',
+        };
+
+        const typeLabel = typeLabels[type] || '';
+
+        // Smallest possible prompt: just type + prompt
+        const prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
+        return { contentPrompt: prompt, titlePrompt: 'provide a short title for the content' };
+    }
 }

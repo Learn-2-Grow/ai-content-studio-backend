@@ -105,7 +105,8 @@ export class ContentService {
         if (!content || !thread) return;
 
         const promptPayload = this.buildPromptPayload(content, thread, previousContents);
-        const aiPrompts = PromptHelper.buildContentGenerationPrompts(promptPayload);
+        // const aiPrompts = PromptHelper.buildContentGenerationPrompts(promptPayload);
+        const aiPrompts = PromptHelper.buildSmallPrompt(promptPayload);
         const aiResponse = await this.aiService.generateContent(aiPrompts.contentPrompt);
 
         await this.contentRepository.update(content._id, {
@@ -125,7 +126,7 @@ export class ContentService {
             this.threadService.findUserThreadByThreadId(jobData.threadId, jobData.userId),
         ]);
 
-        const previousContents = thread ? await this.contentRepository.findByThreadId(thread._id.toString()) : [];
+        const previousContents = thread ? await this.contentRepository.findByThreadId(thread._id.toString(), jobData.contentId) : [];
         return { content, thread, previousContents };
     }
 
