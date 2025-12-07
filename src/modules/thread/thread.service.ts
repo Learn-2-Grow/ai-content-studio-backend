@@ -96,10 +96,10 @@ export class ThreadService {
     async getSummary(user: IUser): Promise<IThreadSummary> {
 
         const userId = user._id.toString();
-        const [threadStats, contentStatusCounts] = await Promise.all([
-            this.getSummaryByUserId(userId),
-            this.contentService.getStatusCountsByUserId(userId),
-        ]);
+        const threadStats = await this.getSummaryByUserId(userId);
+
+        const contentStatusCounts = await this.contentService.getStatusCountsByUserId(threadStats.threadIds);
+
 
         return {
             totalThreads: threadStats.totalThreads,
@@ -119,12 +119,17 @@ export class ThreadService {
 
         // Type map
         const threadsByTypeMap: Record<string, number> = {};
+        const threadIds: string[] = [];
         threadsByType.forEach((item) => {
             threadsByTypeMap[item._id] = item.count;
+            // Collect all thread IDs from all types
+            if (item.threadIds && Array.isArray(item.threadIds)) {
+                threadIds.push(...item.threadIds);
+            }
         });
 
 
-        return { totalThreads, threadsByType: threadsByTypeMap };
+        return { totalThreads, threadsByType: threadsByTypeMap, threadIds };
     }
 
     async findAll(user: IUser, threadQueriesDto: ThreadQueriesDto): Promise<IThreadPagination> {

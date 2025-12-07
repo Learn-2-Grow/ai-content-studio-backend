@@ -213,10 +213,9 @@ export class ContentService {
     /**
      * Gets content status counts.
      */
-    async getStatusCountsByUserId(userId: any): Promise<Record<string, number>> {
+    async getStatusCountsByUserId(threadIds: string[]): Promise<Record<string, number>> {
 
-        const userIdObject = NestHelper.getInstance().getObjectId(userId);
-        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(userIdObject);
+        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(threadIds);
 
         const statusCountsMap: Record<string, number> = {
             [ContentStatus.PENDING]: 0,

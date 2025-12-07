@@ -18,6 +18,7 @@ export interface IThread extends Document {
 export interface IThreadSummary {
     totalThreads?: number;
     threadsByType?: Record<string, number>;
+    threadIds?: string[];
     statusCounts?: Record<string, number>;
 }
 

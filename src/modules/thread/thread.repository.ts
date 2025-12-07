@@ -48,14 +48,20 @@ export class ThreadRepository {
         return this.threadModel.countDocuments({ userId: userIdObjectId }).exec();
     }
 
-    async getThreadCountsByType(userId?: any): Promise<Array<{ _id: string; count: number }>> {
+    async getThreadCountsByType(userId?: any): Promise<Array<{ _id: string; count: number; threadIds: string[] }>> {
 
 
         const aggregate: PipelineStage[] = [];
         if (userId) {
             aggregate.push({ $match: { userId } });
         }
-        aggregate.push({ $group: { _id: '$type', count: { $sum: 1 } } });
+        aggregate.push({
+            $group: {
+                _id: '$type',
+                count: { $sum: 1 },
+                threadIds: { $push: { $toString: '$_id' } }
+            }
+        });
 
         const threadsByType = await this.threadModel.aggregate(aggregate).exec();
 

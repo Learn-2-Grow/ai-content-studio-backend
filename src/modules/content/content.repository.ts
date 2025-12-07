@@ -43,20 +43,16 @@ export class ContentRepository {
      * Executes aggregation query to get content status counts by userId.
      * Returns raw aggregation results - business logic should be in service layer.
      */
-    async aggregateStatusCountsByUserId(userId: any): Promise<Array<{ _id: string; count: number }>> {
-        let userIdObject = null;
-        if (userId) {
-            userIdObject = NestHelper.getInstance().getObjectId(userId);
-        }
+    async aggregateStatusCountsByUserId(threadIds: string[]): Promise<Array<{ _id: string; count: number }>> {
 
         const aggregate: PipelineStage[] = [];
-        if (userIdObject) {
-            aggregate.push({ $match: { userId: userIdObject } });
+        if (threadIds?.length > 0) {
+            aggregate.push({ $match: { threadId: { $in: threadIds } } });
         }
         aggregate.push({ $group: { _id: '$status', count: { $sum: 1 } } });
 
         const statusCounts = await this.contentModel.aggregate(aggregate).exec();
-        return statusCounts.map(status => status.toObject());
+        return statusCounts;
     }
 
     async findAll(filter: any): Promise<IContent[]> {
