@@ -109,6 +109,8 @@ export class ContentService {
         const { content, thread, previousContents } = await this.fetchJobData(jobData);
         if (!content || !thread) return;
 
+        await this.contentRepository.update(content._id, { status: ContentStatus.PROCESSING });
+
         const promptPayload: IPromptPayload = this.buildGeneralPromptPayload(content, thread, previousContents);
 
         const aiPrompt: IAiPrompt = PromptHelper.buildSmallPrompt(promptPayload);
