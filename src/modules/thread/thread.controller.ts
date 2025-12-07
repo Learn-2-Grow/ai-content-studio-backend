@@ -15,6 +15,12 @@ import { ThreadService } from './thread.service';
 export class ThreadController {
     constructor(private readonly threadService: ThreadService) { }
 
+
+    @Get('summary')
+    async getSummary(@GetUser() user: IUser): Promise<IThreadSummary> {
+        return this.threadService.getSummary(user);
+    }
+
     @Post()
     async create(@GetUser() user: any, @Body() createThreadDto: CreateThreadDto) {
         return this.threadService.create(user, createThreadDto);
@@ -46,10 +52,5 @@ export class ThreadController {
     async remove(@GetUser() user: any, @Param('id') id: string) {
         await this.threadService.remove(id, user.userId);
         return { message: 'Thread deleted successfully' };
-    }
-
-    @Get('summary')
-    async getSummary(@GetUser() user: IUser): Promise<IThreadSummary> {
-        return this.threadService.getSummary(user);
     }
 }
