@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SseModule } from '../../sse/sse.module';
 import { AIModule } from '../ai/ai.module';
 import { QueueModule } from '../queue/queue.module';
 import { ThreadModule } from '../thread/thread.module';
@@ -14,6 +15,7 @@ import { Content, ContentSchema } from './entities/content.entity';
         MongooseModule.forFeature([{ name: Content.name, schema: ContentSchema }]),
         ThreadModule,
         UserModule,
+        SseModule,
         forwardRef(() => QueueModule),
         forwardRef(() => AIModule),
     ],

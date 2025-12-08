@@ -3,6 +3,7 @@ import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { IUser } from 'src/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SseService } from '../../sse/sse.service';
 import { ContentService } from './content.service';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
@@ -13,7 +14,10 @@ import { UpdateContentDto } from './dto/update-content.dto';
 @UseGuards(JwtAuthGuard)
 @UseFilters(HttpExceptionFilter)
 export class ContentController {
-    constructor(private readonly contentService: ContentService) { }
+    constructor(
+        private readonly contentService: ContentService,
+        private readonly sseService: SseService,
+    ) { }
 
     @Post('generate')
     async generateContent(
