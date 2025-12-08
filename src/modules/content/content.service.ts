@@ -50,8 +50,8 @@ export class ContentService {
         };
 
         // Add job to queue with 1-minute delay
-        // await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 3 });
-        await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 5000, attempts: 3 });
+        await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 2 });
+        // await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 5000, attempts: 3 });
 
         this.logger.log(`Content generation job queued: ${jobId} for thread: ${thread._id}`);
 
@@ -245,10 +245,7 @@ export class ContentService {
         return contents;
     }
 
-    /**
-     * Gets the latest content for each thread in the provided threadIds array.
-     * Returns a map of threadId to IContent for efficient lookup.
-     */
+
     async findLatestContentByThreadIds(threadIds: string[]): Promise<Map<string, IContent>> {
         return this.contentRepository.findLatestContentByThreadIds(threadIds);
     }

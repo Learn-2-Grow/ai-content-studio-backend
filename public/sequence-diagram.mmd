@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API as NestJS API
+    participant Queue as Redis Queue
+    participant Worker as Queue Processor
+    participant AI as AI Provider
+    participant DB as MongoDB
+    participant SSE as SSE Stream
+    
+    User->>Frontend: Request Content
+    Frontend->>API: POST /content/generate
+    API->>Queue: Add Job (with delay)
+    API-->>Frontend: Return Job ID
+    Frontend->>SSE: Connect to Stream
+    
+    Note over Queue,Worker: After 1 minute delay
+    Queue->>Worker: Process Job
+    Worker->>AI: Call Gemini/OpenRouter
+    AI-->>Worker: Generated Content
+    Worker->>DB: Save Content
+    Worker->>SSE: Send Update Event
+    SSE-->>Frontend: Content Ready
+    Frontend-->>User: Display Content
