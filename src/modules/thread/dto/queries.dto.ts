@@ -19,4 +19,8 @@ export class ThreadQueriesDto {
     @IsOptional()
     pageSize?: string | number;
 
+    @IsOptional()
+    @IsString()
+    search?: string;
+
 }   

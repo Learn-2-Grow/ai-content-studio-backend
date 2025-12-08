@@ -84,6 +84,10 @@ export class ThreadRepository {
             // Even though schema has ref: 'User', the data is stored as string
             filter.userId = queries.userId;
         }
+        if (queries?.search) {
+            // Case-insensitive search on title field
+            filter.title = { $regex: queries.search, $options: 'i' };
+        }
 
         // Parse pagination parameters
         const currentPage = queries?.currentPage ? parseInt(queries.currentPage.toString(), 10) : 1;
