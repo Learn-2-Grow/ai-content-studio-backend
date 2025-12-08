@@ -1,16 +1,13 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
 
-/**
- * Keeps a per-user Subject for server-sent events.
- * Use emitToUser(userId, payload) to send an event.
- */
+
 @Injectable()
 export class SseService implements OnModuleDestroy {
     private readonly logger = new Logger(SseService.name);
     private connections = new Map<string, Subject<any>>();
 
-    // Subscribe returns an Observable that Nest's @Sse will stream.
+    // Subscribe
     subscribe(userId: string): Observable<any> {
         if (!userId) throw new Error('userId required');
         let subj = this.connections.get(userId);
@@ -22,7 +19,7 @@ export class SseService implements OnModuleDestroy {
         return subj.asObservable();
     }
 
-    // Emit payload to a specific user (if connected)
+    // Emit payload 
     emitToUser(userId: string, payload: any) {
         const subj = this.connections.get(userId);
         if (!subj) {
@@ -48,7 +45,6 @@ export class SseService implements OnModuleDestroy {
         this.connections.clear();
     }
 
-    // Optional: remove user subject (call when connection closed from controller)
     closeUser(userId: string) {
         const subj = this.connections.get(userId);
         if (subj) {

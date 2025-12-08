@@ -9,12 +9,9 @@ import { SseService } from './sse.service';
 export class SseController {
     constructor(private readonly sseService: SseService) { }
 
+    // TODO: Add auth guard
     @Sse('stream')
     stream(@Query('userId') userId: string): Observable<MessageEvent> {
-        if (!userId) {
-            throw new Error('userId required'); // return proper HTTP error in production
-        }
-
         return this.sseService.subscribe(userId).pipe(
             map((payload) => {
                 return { data: JSON.stringify(payload) } as MessageEvent;
