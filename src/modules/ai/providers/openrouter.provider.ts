@@ -44,7 +44,7 @@ export class OpenRouterProvider implements IAIProvider {
 
             // Combined prompt
 
-            let combinedPrompt = `${aiPrompt.contentPrompt}\n\n${aiPrompt.titlePrompt}\n\n${aiPrompt.sentimentPrompt}`;
+            let combinedPrompt = `${aiPrompt.contentPrompt}\n\n${aiPrompt.titlePrompt}`;
 
             if (aiPrompt.expectedResponseFormat) {
                 combinedPrompt += `\n\nPlease respond in JSON format:\n${aiPrompt.expectedResponseFormat}`;
@@ -84,10 +84,9 @@ export class OpenRouterProvider implements IAIProvider {
                     const parsedResponse = JSON.parse(responseText);
                     const content = parsedResponse.content || '';
                     const title = parsedResponse.title || content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
-                    const sentiment = parsedResponse.sentiment || null;
 
                     this.logger.log(`Content generated successfully (${content.length} characters)`);
-                    return { content, title, status: ContentStatus.COMPLETED, sentiment };
+                    return { content, title, status: ContentStatus.COMPLETED };
                 } catch (parseError) {
                     this.logger.warn(`Failed to parse JSON response, falling back to text parsing: ${parseError.message}`);
                 }
@@ -96,14 +95,13 @@ export class OpenRouterProvider implements IAIProvider {
             // Fallback: extract from text response
             const content = responseText;
             const title = content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
-            const sentiment: string | null = null;
 
             this.logger.log(`Content generated successfully (${content.length} characters)`);
 
-            return { content, title, status: ContentStatus.COMPLETED, sentiment };
+            return { content, title, status: ContentStatus.COMPLETED };
         } catch (error) {
             this.logger.error(`Error generating content with OpenRouter: ${error.message}`, error.stack);
-            return { content: '', title: '', status: ContentStatus.FAILED, sentiment: null };
+            return { content: '', title: '', status: ContentStatus.FAILED };
         }
     }
 

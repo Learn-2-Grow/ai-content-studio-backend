@@ -49,10 +49,6 @@ export class UserService {
         return user;
     }
 
-    async updateSentiment(userId: string, sentiment: string): Promise<void> {
-        await this.userRepository.update(userId, { sentiment });
-    }
-
     async hashPassword(password: string): Promise<string> {
         return await bcrypt.hash(password, 10);
     }
