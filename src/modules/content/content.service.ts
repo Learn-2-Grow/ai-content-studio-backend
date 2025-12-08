@@ -7,6 +7,7 @@ import { IJobData } from 'src/interfaces/queue.interface';
 import { IThread } from 'src/interfaces/thread.interface';
 import { IUser } from 'src/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
+import { SseService } from '../../sse/sse.service';
 import { AIService } from '../ai/ai.service';
 import { QueueProcess } from '../queue/enums/queue.enum';
 import { QueueService } from '../queue/queue.service';
@@ -28,6 +29,7 @@ export class ContentService {
         private readonly queueService: QueueService,
         private readonly aiService: AIService,
         private readonly userService: UserService,
+        private readonly sseService: SseService,
     ) { }
 
     async generateContent(user: IUser, generateContentDto: GenerateContentDto): Promise<IThread> {
@@ -119,10 +121,12 @@ export class ContentService {
 
         this.logger.log(`AI response: ${JSON.stringify(aiResponse)}`);
 
-        await this.contentRepository.update(content._id, {
+        const updatedContent = await this.contentRepository.update(content._id, {
             generatedContent: aiResponse.content,
             status: aiResponse.status,
         });
+
+        this.sseService.emitToUser(jobData.userId, updatedContent);
 
         // Update thread title if it's the first content in the thread
         if (aiResponse.status === ContentStatus.COMPLETED && aiResponse.title && previousContents?.length === 0) {
@@ -161,7 +165,8 @@ export class ContentService {
     async handleContentJobError(jobData: IJobData, error: any): Promise<void> {
 
         this.logger.error(`Error processing content job: ${error.message}`, error.stack);
-        await this.contentRepository.update(jobData.contentId, { status: ContentStatus.FAILED });
+        const updatedContent = await this.contentRepository.update(jobData.contentId, { status: ContentStatus.FAILED });
+        this.sseService.emitToUser(jobData.userId, updatedContent);
     }
 
     async findOne(id: string, userId: string): Promise<IContent> {

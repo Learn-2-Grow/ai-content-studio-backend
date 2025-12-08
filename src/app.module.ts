@@ -7,6 +7,7 @@ import { ContentModule } from './modules/content/content.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { ThreadModule } from './modules/thread/thread.module';
+import { SseModule } from './sse/sse.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ThreadModule } from './modules/thread/thread.module';
     QueueModule,
     ThreadModule,
     ContentModule,
+    SseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
