@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
+import { ThreadStatus } from "../enums/thread.enum";
 
 export class ThreadQueriesDto {
     @IsOptional()
@@ -22,5 +23,9 @@ export class ThreadQueriesDto {
     @IsOptional()
     @IsString()
     search?: string;
+
+    @IsOptional()
+    @IsEnum(ThreadStatus)
+    status?: ThreadStatus;
 
 }   

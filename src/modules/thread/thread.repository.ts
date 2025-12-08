@@ -88,6 +88,9 @@ export class ThreadRepository {
             // Case-insensitive search on title field
             filter.title = { $regex: queries.search, $options: 'i' };
         }
+        if (queries?.status) {
+            filter.status = queries.status;
+        }
 
         // Parse pagination parameters
         const currentPage = queries?.currentPage ? parseInt(queries.currentPage.toString(), 10) : 1;

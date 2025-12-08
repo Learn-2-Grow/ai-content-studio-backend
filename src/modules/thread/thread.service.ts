@@ -143,6 +143,7 @@ export class ThreadService {
             currentPage,
             pageSize,
             search: threadQueriesDto?.search,
+            status: threadQueriesDto?.status,
         }
         const pagination = await this.threadRepository.findAll(payload);
 
