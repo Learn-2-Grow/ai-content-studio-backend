@@ -15,7 +15,7 @@ import { UpdateContentDto } from './dto/update-content.dto';
 export class ContentController {
     constructor(private readonly contentService: ContentService) { }
 
-    @Post('generate-content')
+    @Post('generate')
     async generateContent(
         @GetUser() user: IUser,
         @Body() generateContentDto: GenerateContentDto
