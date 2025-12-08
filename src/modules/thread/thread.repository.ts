@@ -80,8 +80,7 @@ export class ThreadRepository {
             filter._id = { $in: queries.threadIds.map(id => NestHelper.getInstance().getObjectId(id)) };
         }
         if (queries?.userId) {
-            // Use userId as string (matching findByUserId which works)
-            // Even though schema has ref: 'User', the data is stored as string
+
             filter.userId = queries.userId;
         }
         if (queries?.search) {
@@ -90,6 +89,9 @@ export class ThreadRepository {
         }
         if (queries?.status) {
             filter.status = queries.status;
+        }
+        if (queries?.type) {
+            filter.type = queries.type;
         }
 
         // Parse pagination parameters
@@ -114,7 +116,6 @@ export class ThreadRepository {
 
         const result = await this.threadModel.aggregate(pipeline).exec();
 
-        // Handle aggregation result structure
         if (!result || result.length === 0) {
             return {
                 data: [],
