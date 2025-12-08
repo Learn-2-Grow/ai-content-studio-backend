@@ -133,9 +133,6 @@ export class ContentService {
             await this.threadService.updateTitle(thread._id, aiResponse.title);
         }
 
-        if (aiResponse.sentiment) {
-            await this.userService.updateSentiment(jobData.userId, aiResponse.sentiment);
-        }
     }
 
     async fetchJobData(jobData: IJobData) {

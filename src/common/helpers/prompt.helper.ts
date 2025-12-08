@@ -96,9 +96,7 @@ Generate a short, catchy, human-friendly title for this content thread.
 - Make it relevant and clear for the overall topic.
   `.trim();
 
-        const sentimentPrompt = ` Analyze the sentiment of this content and return ONE WORD ONLY: positive, negative, or neutral.`;
-
-        return { contentPrompt, titlePrompt, sentimentPrompt };
+        return { contentPrompt, titlePrompt };
     }
 
     /**
@@ -173,16 +171,14 @@ Follow the user's instructions carefully.
         // Smallest possible prompt: just type + prompt and skip history
         let prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
         prompt = prompt.trim() + " response within 100 words";
-        const sentimentPrompt = ` Analyze the sentiment of this content and return ONE WORD ONLY: positive, negative, or neutral.`;
         const titlePrompt = 'provide a short title for the content within 3-5 words';
-        return { contentPrompt: prompt, titlePrompt, sentimentPrompt };
+        return { contentPrompt: prompt, titlePrompt };
     }
 
     static setExpectedPromptResponseFormat(prompt: IAiPrompt): void {
         prompt.expectedResponseFormat = `{
             "content": "string",
             "title": "string",
-            "sentiment": "positive, negative, or neutral"
         }`.trim();
     }
 }

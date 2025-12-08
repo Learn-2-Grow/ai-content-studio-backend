@@ -5,7 +5,6 @@ export interface IAIContentResponse {
     content: string;
     title: string;
     status: ContentStatus;
-    sentiment: string | null;
 }
 
 export interface IAIProvider {

@@ -36,7 +36,7 @@ export class GeminiProvider implements IAIProvider {
             const maxOutputTokens = 1000;
 
             // Combined prompt
-            const combinedPrompt = `${aiPrompt.contentPrompt}\n\n${aiPrompt.titlePrompt}\n\n${aiPrompt.sentimentPrompt}${aiPrompt.expectedResponseFormat ? `\n\n${aiPrompt.expectedResponseFormat}` : ''}`;
+            const combinedPrompt = `${aiPrompt.contentPrompt}\n\n${aiPrompt.titlePrompt}${aiPrompt.expectedResponseFormat ? `\n\n${aiPrompt.expectedResponseFormat}` : ''}`;
 
             const generationConfig: any = {
                 maxOutputTokens: maxOutputTokens,
@@ -61,10 +61,9 @@ export class GeminiProvider implements IAIProvider {
                     const parsedResponse = JSON.parse(responseText);
                     const content = parsedResponse.content || '';
                     const title = parsedResponse.title || content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
-                    const sentiment = parsedResponse.sentiment || null;
 
                     this.logger.log(`Content generated successfully (${content.length} characters)`);
-                    return { content, title, status: ContentStatus.COMPLETED, sentiment };
+                    return { content, title, status: ContentStatus.COMPLETED };
                 } catch (parseError) {
                     this.logger.warn(`Failed to parse JSON response, falling back to text parsing: ${parseError.message}`);
                 }
@@ -73,14 +72,13 @@ export class GeminiProvider implements IAIProvider {
             // Fallback: extract from text response
             const content = responseText;
             const title = content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
-            const sentiment: string | null = null;
 
             this.logger.log(`Content generated successfully (${content.length} characters)`);
 
-            return { content, title, status: ContentStatus.COMPLETED, sentiment };
+            return { content, title, status: ContentStatus.COMPLETED };
         } catch (error: any) {
             this.logger.error(`Error generating content: ${error.message}`, error.stack);
-            return { content: '', title: '', status: ContentStatus.FAILED, sentiment: null };
+            return { content: '', title: '', status: ContentStatus.FAILED };
         }
     }
 }
