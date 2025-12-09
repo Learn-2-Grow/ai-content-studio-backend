@@ -25,7 +25,7 @@ export class Content {
     statusUpdatedAt: Date;
 
 
-    @Prop({ default: 'neutral' })
+    @Prop({ default: '' })
     sentiment: SentimentType;
 }
 
