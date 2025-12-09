@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { ContentType, ThreadStatus } from '../enums/thread.enum';
+import { ContentType, ThreadStatus } from 'src/common/enums/thread.enum';
 
 export type ThreadDocument = Thread & Document;
 

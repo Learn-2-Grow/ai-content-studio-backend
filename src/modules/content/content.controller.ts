@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
-import { IUser } from 'src/interfaces/user.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { SseService } from '../../sse/sse.service';
+import { SseService } from '../sse/sse.service';
 import { ContentService } from './content.service';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
@@ -31,20 +31,5 @@ export class ContentController {
     @Get(':id')
     async findOne(@GetUser() user: any, @Param('id') id: string) {
         return this.contentService.findOne(id, user.userId);
-    }
-
-    @Put(':id')
-    async update(
-        @GetUser() user: any,
-        @Param('id') id: string,
-        @Body() updateContentDto: UpdateContentDto,
-    ) {
-        return this.contentService.update(id, user.userId, updateContentDto);
-    }
-
-    @Delete(':id')
-    async remove(@GetUser() user: any, @Param('id') id: string) {
-        await this.contentService.remove(id, user.userId);
-        return { message: 'Content deleted successfully' };
     }
 }

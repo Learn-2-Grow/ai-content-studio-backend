@@ -1,6 +1,6 @@
 import { Document, Types } from 'mongoose';
 import { AIProvider } from 'src/common/enums/ai-provider.enum';
-import { ContentStatus } from 'src/modules/content/enums/content.enum';
+import { ContentStatus } from 'src/common/enums/content.enum';
 
 export interface IContent extends Document {
     _id: Types.ObjectId;

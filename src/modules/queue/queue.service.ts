@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
-import { QueueName } from './enums/queue.enum';
+import { QueueName } from 'src/common/enums/queue.enum';
 
 @Injectable()
 export class QueueService implements OnModuleInit {
@@ -70,36 +70,9 @@ export class QueueService implements OnModuleInit {
         return await this.contentGeneration.add(jobName, data, options);
     }
 
-    async getJob(jobId: string) {
-        return await this.contentGeneration.getJob(jobId);
-    }
-
-    async getJobs(status?: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed') {
-        if (status) {
-            return await this.contentGeneration.getJobs([status], 0, -1);
-        }
-        return await this.contentGeneration.getJobs(['waiting', 'active', 'completed', 'failed', 'delayed'], 0, -1);
-    }
-
-    async removeJob(jobId: string) {
-        const job = await this.contentGeneration.getJob(jobId);
-        if (job) {
-            await job.remove();
-        }
-    }
 
 
-    async clean(grace: number = 1000, limit: number = 100) {
-        const [completed, failed] = await Promise.all([
-            this.contentGeneration.clean(grace, 'completed', limit),
-            this.contentGeneration.clean(grace, 'failed', limit),
-        ]);
 
-        return {
-            completed: completed.length,
-            failed: failed.length,
-        };
-    }
 
 
 }

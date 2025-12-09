@@ -1,23 +1,23 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ContentStatus } from 'src/common/enums/content.enum';
+import { QueueProcess } from 'src/common/enums/queue.enum';
 import { NestHelper } from 'src/common/helpers/nest.helper';
 import { PromptHelper } from 'src/common/helpers/prompt.helper';
-import { IContent } from 'src/interfaces/content.interface';
-import { IAiPrompt, IPromptPayload } from 'src/interfaces/prompt.interface';
-import { IJobData } from 'src/interfaces/queue.interface';
-import { IThread } from 'src/interfaces/thread.interface';
-import { IUser } from 'src/interfaces/user.interface';
+import { IContent } from 'src/common/interfaces/content.interface';
+import { IAiPrompt, IPromptPayload } from 'src/common/interfaces/prompt.interface';
+import { IJobData } from 'src/common/interfaces/queue.interface';
+import { IThread } from 'src/common/interfaces/thread.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
-import { SseService } from '../../sse/sse.service';
 import { AIService } from '../ai/ai.service';
-import { QueueProcess } from '../queue/enums/queue.enum';
 import { QueueService } from '../queue/queue.service';
+import { SseService } from '../sse/sse.service';
 import { ThreadService } from '../thread/thread.service';
 import { UserService } from '../user/user.service';
 import { ContentRepository } from './content.repository';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { QueryDto } from './dto/query.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
-import { ContentStatus } from './enums/content.enum';
 
 @Injectable()
 export class ContentService {
@@ -46,12 +46,10 @@ export class ContentService {
             contentId: jobId,
             userId: user._id.toString(),
             threadId: thread._id.toString(),
-            provider: generateContentDto.provider, // Pass provider to job
+            provider: generateContentDto.provider,
         };
 
-        // Add job to queue with 1-minute delay
         await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 2 });
-        // await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 5000, attempts: 3 });
 
         this.logger.log(`Content generation job queued: ${jobId} for thread: ${thread._id}`);
 
@@ -73,18 +71,16 @@ export class ContentService {
     async generateThread(generateContentDto: GenerateContentDto, user: IUser): Promise<IThread> {
         let thread: IThread;
 
-        // If threadId not provided, auto-create thread
         if (!generateContentDto.threadId && generateContentDto.threadId != 'new-thread') {
 
             const title = generateContentDto?.prompt?.split(' ')?.slice(0, 3)?.join(' ') || '';
             thread = await this.threadService.create(user, {
-                // Take first 3 words of the prompt
                 title: `${title} - ${generateContentDto.contentType}`,
                 type: generateContentDto.contentType,
             });
 
         } else {
-            // Verify thread exists and belongs to user
+            // Verify thread exists
             thread = await this.threadService.findUserThreadByThreadId(generateContentDto.threadId, user._id);
             if (!thread) {
                 ExceptionHelper.getInstance().defaultError(
@@ -178,7 +174,7 @@ export class ContentService {
             );
         }
 
-        // Verify thread belongs to user
+        // Verify user thread 
         const threadIdString = typeof content.threadId === 'string' ? content.threadId : content.threadId.toString();
         const thread = await this.threadService.findUserThreadByThreadId(threadIdString, userId);
         if (!thread) {
@@ -214,9 +210,9 @@ export class ContentService {
         this.logger.log(`Content deleted: ${id} by user: ${userId}`);
     }
 
-    /**
-     * Gets content status counts.
-     */
+
+    // Get content status counts.
+
     async getStatusCountsByUserId(threadIds: string[]): Promise<Record<string, number>> {
 
         const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(threadIds);

@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
-import { IUser } from 'src/interfaces/user.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { CreateUserDto } from 'src/modules/user/dtos/user.dto';
-import { UserType } from 'src/modules/user/enums/user.enum';
+import { UserType } from 'src/common/enums/user.enum';
 
 export const mockUser: IUser = {
     _id: new Types.ObjectId(),

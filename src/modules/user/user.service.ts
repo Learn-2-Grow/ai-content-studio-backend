@@ -1,9 +1,9 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { IUser } from 'src/interfaces/user.interface';
+import { UserType } from 'src/common/enums/user.enum';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
 import { CreateUserDto } from './dtos/user.dto';
-import { UserType } from './enums/user.enum';
 import { UserRepository } from './user.repository';
 
 @Injectable()
@@ -34,10 +34,8 @@ export class UserService {
             ExceptionHelper.getInstance().defaultError('User already exists', 'USER_ALREADY_EXISTS', HttpStatus.CONFLICT);
         }
 
-        // Hash password
         const hashedPassword = await this.hashPassword(createUserDto.password);
 
-        // Create user object
         const userObject: Partial<IUser> = {
             name: createUserDto?.name?.trim() || '',
             email: createUserDto?.email?.trim() || '',
@@ -50,10 +48,10 @@ export class UserService {
     }
 
     async hashPassword(password: string): Promise<string> {
-        return await bcrypt.hash(password, 10);
+        return bcrypt.hash(password, 10);
     }
     async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
-        return await bcrypt.compare(password, hashedPassword);
+        return bcrypt.compare(password, hashedPassword);
     }
 
     async me(user: IUser): Promise<IUser> {

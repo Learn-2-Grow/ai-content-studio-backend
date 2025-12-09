@@ -3,9 +3,9 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GeminiModel } from 'src/common/enums/gemini.enum';
 import { ExceptionHelper } from 'src/common/helpers/exceptions.helper';
-import { IAiPrompt } from 'src/interfaces/prompt.interface';
-import { ContentStatus } from '../../content/enums/content.enum';
-import { IAIContentResponse, IAIProvider } from '../interfaces/ai-provider.interface';
+import { IAiPrompt } from 'src/common/interfaces/prompt.interface';
+import { ContentStatus } from 'src/common/enums/content.enum';
+import { IAIContentResponse, IAIProvider } from 'src/common/interfaces/ai-provider.interface';
 
 @Injectable()
 export class GeminiProvider implements IAIProvider {
@@ -69,7 +69,6 @@ export class GeminiProvider implements IAIProvider {
                 }
             }
 
-            // Fallback: extract from text response
             const content = responseText;
             const title = content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
 

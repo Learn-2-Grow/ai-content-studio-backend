@@ -1,11 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
-import { IUser } from 'src/interfaces/user.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { mockCreateUserDto, mockUser } from '../../../test/mocks/user.mocks';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
 import { CreateUserDto } from './dtos/user.dto';
-import { UserType } from './enums/user.enum';
+import { UserType } from 'src/common/enums/user.enum';
 import { UserRepository } from './user.repository';
 import { UserService } from './user.service';
 

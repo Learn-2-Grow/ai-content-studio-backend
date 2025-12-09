@@ -72,21 +72,6 @@ export class AxiosHelper {
         }
     }
 
-    async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        try {
-            const response: AxiosResponse<T> = await this.axiosInstance.delete(url, config);
-            return response.data;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data
-                    ? JSON.stringify(error.response.data)
-                    : error.message;
-                throw new Error(`HTTP ${error.response?.status || 'Unknown'} - ${errorMessage}`);
-            }
-            throw error;
-        }
-    }
-
 
     getAxiosInstance(): AxiosInstance {
         return this.axiosInstance;

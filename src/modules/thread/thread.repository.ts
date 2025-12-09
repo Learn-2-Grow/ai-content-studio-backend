@@ -1,7 +1,7 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IThread, IThreadPagination } from 'src/interfaces/thread.interface';
+import { IThread, IThreadPagination } from 'src/common/interfaces/thread.interface';
 import { ThreadQueriesDto } from './dto/queries.dto';
 import { Thread, ThreadDocument } from './entities/thread.entity';
 
@@ -84,7 +84,7 @@ export class ThreadRepository {
             filter.userId = queries.userId;
         }
         if (queries?.search) {
-            // Case-insensitive search on title field
+            // Case-insensitive
             filter.title = { $regex: queries.search, $options: 'i' };
         }
         if (queries?.status) {
@@ -94,12 +94,10 @@ export class ThreadRepository {
             filter.type = queries.type;
         }
 
-        // Parse pagination parameters
         const currentPage = queries?.currentPage ? parseInt(queries.currentPage.toString(), 10) : 1;
         const pageSize = queries?.pageSize ? parseInt(queries.pageSize.toString(), 10) : 10;
         const skip = (currentPage - 1) * pageSize;
 
-        // Use aggregation with $facet to get both count and data in a single database call
         const pipeline: PipelineStage[] = [
             { $match: filter },
             {

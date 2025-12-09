@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString } from "class-validator";
-import { ContentType, ThreadStatus } from "../enums/thread.enum";
+import { ContentType, ThreadStatus } from "src/common/enums/thread.enum";
 
 export class ThreadQueriesDto {
     @IsOptional()

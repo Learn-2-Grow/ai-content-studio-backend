@@ -1,6 +1,6 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { AIProvider } from 'src/common/enums/ai-provider.enum';
-import { ContentType } from '../../thread/enums/thread.enum';
+import { ContentType } from 'src/common/enums/thread.enum';
 
 export class GenerateContentDto {
     @IsNotEmpty()
@@ -16,5 +16,5 @@ export class GenerateContentDto {
     threadId?: string;
     @IsOptional()
     @IsEnum(AIProvider)
-    provider?: AIProvider; // Customer can choose provider, defaults to OpenRouter if not available
+    provider?: AIProvider;
 }

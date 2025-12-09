@@ -1,13 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIProvider } from 'src/common/enums/ai-provider.enum';
-import { IAiPrompt } from 'src/interfaces/prompt.interface';
-import { IAIContentResponse, IAIProvider } from './interfaces/ai-provider.interface';
+import { IAIContentResponse, IAIProvider } from 'src/common/interfaces/ai-provider.interface';
+import { IAiPrompt } from 'src/common/interfaces/prompt.interface';
 import { GeminiProvider } from './providers/gemini.provider';
 import { OpenRouterProvider } from './providers/openrouter.provider';
 
 @Injectable()
 export class AIService {
+
     private readonly logger = new Logger(AIService.name);
     private readonly defaultProvider: IAIProvider;
     private readonly openRouterModel: string;
@@ -23,13 +24,7 @@ export class AIService {
         this.logger.log(`AI Service initialized with default provider: ${providerType}`);
     }
 
-    /**
-     * Generate content using the specified provider
-     * @param aiPrompt The AI prompt to generate content from
-     * @param provider Optional provider to use
-     * @param model Optional model to use
-     * @returns Generated content response
-     */
+    // Generate content with the selected provider
     async generateContent(
         aiPrompt: IAiPrompt,
         provider?: AIProvider,
@@ -42,9 +37,6 @@ export class AIService {
         return aiResponse;
     }
 
-    /**
-     * Get the provider instance
-     */
     getProvider(provider: AIProvider): IAIProvider {
         switch (provider) {
             case AIProvider.GEMINI:
@@ -52,7 +44,7 @@ export class AIService {
             case AIProvider.OPENROUTER:
                 return this.openRouterProvider;
             default:
-                return this.openRouterProvider; // Fallback to OpenRouter
+                return this.openRouterProvider;
         }
     }
 }

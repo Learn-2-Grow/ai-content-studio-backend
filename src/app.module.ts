@@ -6,8 +6,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ContentModule } from './modules/content/content.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { SseModule } from './modules/sse/sse.module';
 import { ThreadModule } from './modules/thread/thread.module';
-import { SseModule } from './sse/sse.module';
 
 @Module({
   imports: [

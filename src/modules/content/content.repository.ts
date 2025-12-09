@@ -1,7 +1,7 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IContent } from 'src/interfaces/content.interface';
+import { IContent } from 'src/common/interfaces/content.interface';
 import { Content, ContentDocument } from './entities/content.entity';
 
 export class ContentRepository {
@@ -33,16 +33,12 @@ export class ContentRepository {
         return this.contentModel.findByIdAndDelete(id).exec();
     }
 
-    async findByJobId(jobId: string): Promise<IContent | null> {
-        // Using _id as jobId
-        const content = await this.contentModel.findById(jobId).exec();
+    async findByJobId(id: string): Promise<IContent | null> {
+        const content = await this.contentModel.findById(id).exec();
         return content?.toObject() || null;
     }
 
-    /**
-     * Executes aggregation query to get content status counts by userId.
-     * Returns raw aggregation results - business logic should be in service layer.
-     */
+    // Aggregates content status counts by user.
     async aggregateStatusCountsByUserId(threadIds: string[]): Promise<Array<{ _id: string; count: number }>> {
 
         const aggregate: PipelineStage[] = [];
@@ -60,10 +56,7 @@ export class ContentRepository {
         return contents?.map(content => content?.toObject() || null) || [];
     }
 
-    /**
-     * Gets the latest content for each thread in the provided threadIds array.
-     * Returns a map of threadId to IContent for efficient lookup.
-     */
+    // Returns a map of threadId to latest IContent.
     async findLatestContentByThreadIds(threadIds: string[]): Promise<Map<string, IContent>> {
         if (!threadIds || threadIds.length === 0) {
             return new Map();

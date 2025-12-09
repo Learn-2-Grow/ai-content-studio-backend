@@ -1,9 +1,9 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Job } from 'bull';
-import { IJobData } from 'src/interfaces/queue.interface';
+import { IJobData } from 'src/common/interfaces/queue.interface';
 import { ContentService } from '../content/content.service';
-import { QueueName, QueueProcess } from './enums/queue.enum';
+import { QueueName, QueueProcess } from 'src/common/enums/queue.enum';
 
 @Processor(QueueName.CONTENT_GENERATION)
 export class QueueProcessor {

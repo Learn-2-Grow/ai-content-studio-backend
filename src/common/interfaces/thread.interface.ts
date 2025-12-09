@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { ContentType, ThreadStatus } from 'src/modules/thread/enums/thread.enum';
+import { ContentType, ThreadStatus } from 'src/common/enums/thread.enum';
 import { IContent } from './content.interface';
 
 export interface IThread extends Document {

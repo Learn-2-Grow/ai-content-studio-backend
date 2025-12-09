@@ -2,8 +2,8 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ExceptionHelper } from 'src/common/helpers/exceptions.helper';
-import { IAuthResponse } from 'src/interfaces/auth.interface';
-import { IUser } from 'src/interfaces/user.interface';
+import { IAuthResponse } from 'src/common/interfaces/auth.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -21,7 +21,6 @@ export class AuthService {
     async register(registerDto: RegisterDto): Promise<IAuthResponse> {
 
         const { name, email, password } = registerDto;
-        // Create user using UserService
         const user: IUser = await this.userService.create({
             name,
             email,
@@ -38,7 +37,6 @@ export class AuthService {
             },
         }
 
-        // Generate auth tokens
         if (user) {
             const { accessToken, refreshToken } = await this.generateAuthTokens(user);
             authResponse.tokens = { access: accessToken, refresh: refreshToken };
@@ -51,19 +49,16 @@ export class AuthService {
 
         const { email, password } = loginDto;
 
-        // Validate user
         const user: IUser | null = await this.userService.isActiveByEmail(email);
         if (!user) {
             ExceptionHelper.getInstance().defaultError('Invalid email', 'INVALID_EMAIL', HttpStatus.UNAUTHORIZED);
         }
 
-        // Verify password
         const isPasswordValid = await this.userService.comparePassword(password, user.password);
         if (!isPasswordValid) {
             ExceptionHelper.getInstance().defaultError('Invalid password', 'INVALID_PASSWORD', HttpStatus.UNAUTHORIZED);
         }
 
-        // Generate auth tokens
         const { accessToken, refreshToken } = await this.generateAuthTokens(user);
 
         this.logger.log(`User logged in: ${email}`);
@@ -99,6 +94,28 @@ export class AuthService {
         return this.userService.findById(userId);
     }
 
+    async refreshToken(refreshToken: string): Promise<IAuthResponse> {
+        try {
+            const secret = this.configService.get<string>('JWT_SECRET');
+            const payload = await this.jwtService.verifyAsync(refreshToken, { secret });
 
+            const user: IUser | null = await this.userService.findById(payload.sub);
+            if (!user) {
+                ExceptionHelper.getInstance().defaultError('Invalid refresh token', 'INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
+            }
 
+            const { accessToken, refreshToken: newRefreshToken } = await this.generateAuthTokens(user);
+
+            return {
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                },
+                tokens: { access: accessToken, refresh: newRefreshToken }
+            };
+        } catch (error) {
+            ExceptionHelper.getInstance().defaultError('Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
+        }
+    }
 }

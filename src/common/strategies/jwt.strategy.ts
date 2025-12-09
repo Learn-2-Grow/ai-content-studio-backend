@@ -18,15 +18,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        // Passport JWT already verified the token signature and expiration
-        // We only need to verify the user still exists in the database
+
         const user = await this.authService.validateUser(payload.sub);
         if (!user) {
             throw new UnauthorizedException('User not found or inactive');
         }
-
-        // Return user object that will be attached to request.user
-        // This matches what the controllers expect
         return user;
     }
 }

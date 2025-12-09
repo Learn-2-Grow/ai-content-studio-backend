@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AIModule } from '../ai/ai.module';
 import { ContentModule } from '../content/content.module';
 import { Content, ContentSchema } from '../content/entities/content.entity';
-import { QueueName } from './enums/queue.enum';
+import { QueueName } from 'src/common/enums/queue.enum';
 import { QueueProcessor } from './queue.processor';
 import { QueueService } from './queue.service';
 
