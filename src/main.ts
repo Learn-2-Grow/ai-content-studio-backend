@@ -1,11 +1,10 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-//import * as csurf from 'csurf';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 
@@ -14,7 +13,6 @@ function logStartup(port: any, startupStartTime: bigint): void {
   const startupEndTime = process.hrtime.bigint();
   const totalStartupTime = Number(startupEndTime - startupStartTime) / 1000000;
 
-  // Enhanced startup banner with advanced features
   const nodeVersion = process.version;
   const platform = process.platform;
   const arch = process.arch;

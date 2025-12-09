@@ -1,5 +1,5 @@
 import { PromptTone } from 'src/common/enums/prompt.enum';
-import { ContentType } from 'src/modules/thread/enums/thread.enum';
+import { ContentType } from 'src/common/enums/thread.enum';
 
 export interface IPromptHistoryItem {
     prompt: string;

@@ -1,11 +1,10 @@
+import { ContentType } from 'src/common/enums/thread.enum';
 import {
     IAiPrompt,
     IPromptPayload,
-} from 'src/interfaces/prompt.interface';
-import { ContentType } from 'src/modules/thread/enums/thread.enum';
+} from 'src/common/interfaces/prompt.interface';
 
 export class PromptHelper {
-    // Builds prompts for content and title generation from the given payload.
     static buildContentGenerationPrompts(payload: IPromptPayload): IAiPrompt {
         const { type, history, current } = payload;
 
@@ -13,7 +12,7 @@ export class PromptHelper {
         const language = current.language || 'en';
         const extraInstructions = current.extraInstructions || 'None.';
 
-        // Type instructions from buildPrompt method
+        // Type instructions
         const typeInstructions = {
             [ContentType.BLOG_POST]: 'Write a comprehensive blog post',
             [ContentType.PRODUCT_DESCRIPTION]:
@@ -37,7 +36,7 @@ export class PromptHelper {
                     )
                     .join('\n\n');
 
-        // Add context in numbered list format (from buildPrompt method)
+        // Add context
         let contextText = '';
         if (history && history.length > 0) {
             contextText = '\n\nPrevious context:\n';
@@ -72,7 +71,7 @@ Use the previous context only as reference. Do NOT repeat earlier responses.
 Return only the final content, without explanations about what you are doing.
   `.trim();
 
-        // You can call this separately (e.g. only for first item in a thread)
+
         const titlePrompt = `
 You are an expert title generator.
 
@@ -99,10 +98,7 @@ Generate a short, catchy, human-friendly title for this content thread.
         return { contentPrompt, titlePrompt };
     }
 
-    /**
-     * Returns specific instructions based on content type.
-     * This helps the AI clearly shape the output format.
-     */
+    // Returns brief content type instructions.
     static getTypeInstruction(type: ContentType): string {
         switch (type) {
             case ContentType.BLOG_POST:
@@ -152,11 +148,9 @@ Follow the user's instructions carefully.
         }
     }
 
-    // Short description: Minimal prompt builder for content generation
     static buildSmallPrompt(payload: IPromptPayload): IAiPrompt {
         const { type, current, history } = payload;
 
-        // Ultra-minimal type labels
         const typeLabels = {
             [ContentType.BLOG_POST]: 'Blog',
             [ContentType.PRODUCT_DESCRIPTION]: 'Product',

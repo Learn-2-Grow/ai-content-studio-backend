@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { UserType } from '../enums/user.enum';
+import { UserType } from 'src/common/enums/user.enum';
 
 export type UserDocument = User & Document;
 
 @Schema({
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
 })
 export class User {
     @Prop({ required: true, trim: true })

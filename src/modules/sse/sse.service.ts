@@ -19,7 +19,7 @@ export class SseService implements OnModuleDestroy {
         return subj.asObservable();
     }
 
-    // Emit payload 
+    // Emit and send data to the frontend 
     emitToUser(userId: string, payload: any) {
         const subj = this.connections.get(userId);
         if (!subj) {
@@ -36,7 +36,7 @@ export class SseService implements OnModuleDestroy {
         }
     }
 
-    // Cleanup when the module shuts down
+    // Cleanup
     onModuleDestroy() {
         this.logger.log('SSE: cleaning up subjects');
         for (const [k, s] of this.connections) {
@@ -45,12 +45,5 @@ export class SseService implements OnModuleDestroy {
         this.connections.clear();
     }
 
-    closeUser(userId: string) {
-        const subj = this.connections.get(userId);
-        if (subj) {
-            subj.complete();
-            this.connections.delete(userId);
-            this.logger.log(`SSE: closed connection for user ${userId}`);
-        }
-    }
+
 }

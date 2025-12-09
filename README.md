@@ -6,13 +6,14 @@ AI Content Studio is a backend API that helps users create content using AI. Use
 
 ## Project Features
 
-- User authentication with JWT tokens
+- User authentication with JWT tokens (access & refresh tokens)
 - Create and manage content threads
 - Generate AI content using Gemini or OpenRouter
 - Real-time updates using Server-Sent Events (SSE)
 - Background job processing with Bull queue
 - Store data in MongoDB
 - RESTful API with versioning
+- Organized codebase structure with shared common utilities
 
 ## Prerequisites
 
@@ -45,20 +46,16 @@ docker-compose up -d --build
 npm install
 ```
 
-2. Create a `.env` file with required variables:
-```
-APP_PORT=3000
-MONGODB_URI=mongodb://localhost:27017/ai_content_studio
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-GEMINI_API_KEY=your-gemini-api-key
-OPENROUTER_API_KEY=your-openrouter-api-key
+2. Copy `.env.example` to `.env` and update with your values:
+```bash
+cp .env.example .env
 ```
 
-3. Start MongoDB and Redis services
+3. Update `.env` with your configuration values (see `.env.example` for all required variables)
 
-4. Run the application:
+4. Start MongoDB and Redis services
+
+5. Run the application:
 ```bash
 # Development
 npm run start:dev
@@ -275,6 +272,32 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 }
 ```
 
+#### Refresh Token
+- **Endpoint**: `POST /api/v1/auth/refresh`
+- **Description**: Refresh access token using refresh token
+- **Example Request**:
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }'
+```
+- **Example Response**:
+```json
+{
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "tokens": {
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
 ### User Module
 
 #### Get Current User
@@ -297,34 +320,6 @@ curl http://localhost:3000/api/v1/users/me \
 ```
 
 ### Thread Module
-
-#### Create Thread
-- **Endpoint**: `POST /api/v1/threads`
-- **Description**: Create a new content thread
-- **Auth**: Required
-- **Example Request**:
-```bash
-curl -X POST http://localhost:3000/api/v1/threads \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "My Blog Post",
-    "type": "blog_post",
-    "status": "active"
-  }'
-```
-- **Example Response**:
-```json
-{
-  "_id": "507f1f77bcf86cd799439012",
-  "userId": "507f1f77bcf86cd799439011",
-  "title": "My Blog Post",
-  "type": "blog_post",
-  "status": "active",
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "updatedAt": "2024-01-15T10:30:00.000Z"
-}
-```
 
 #### Get All Threads
 - **Endpoint**: `GET /api/v1/threads`
@@ -427,47 +422,6 @@ curl http://localhost:3000/api/v1/threads/507f1f77bcf86cd799439012 \
 }
 ```
 
-#### Update Thread
-- **Endpoint**: `PUT /api/v1/threads/:id`
-- **Description**: Update thread details
-- **Auth**: Required
-- **Example Request**:
-```bash
-curl -X PUT http://localhost:3000/api/v1/threads/507f1f77bcf86cd799439012 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Updated Blog Post Title",
-    "status": "archived"
-  }'
-```
-- **Example Response**:
-```json
-{
-  "_id": "507f1f77bcf86cd799439012",
-  "title": "Updated Blog Post Title",
-  "type": "blog_post",
-  "status": "archived",
-  "updatedAt": "2024-01-15T11:00:00.000Z"
-}
-```
-
-#### Delete Thread
-- **Endpoint**: `DELETE /api/v1/threads/:id`
-- **Description**: Delete a thread
-- **Auth**: Required
-- **Example Request**:
-```bash
-curl -X DELETE http://localhost:3000/api/v1/threads/507f1f77bcf86cd799439012 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-- **Example Response**:
-```json
-{
-  "message": "Thread deleted successfully"
-}
-```
-
 ### Content Module
 
 #### Generate Content
@@ -521,44 +475,6 @@ curl http://localhost:3000/api/v1/content/507f1f77bcf86cd799439015 \
 }
 ```
 
-#### Update Content
-- **Endpoint**: `PUT /api/v1/content/:id`
-- **Description**: Update existing content (e.g., edit generated content)
-- **Auth**: Required
-- **Example Request**:
-```bash
-curl -X PUT http://localhost:3000/api/v1/content/507f1f77bcf86cd799439015 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "generatedContent": "Updated content text here..."
-  }'
-```
-- **Example Response**:
-```json
-{
-  "_id": "507f1f77bcf86cd799439015",
-  "generatedContent": "Updated content text here...",
-  "updatedAt": "2024-01-15T11:00:00.000Z"
-}
-```
-
-#### Delete Content
-- **Endpoint**: `DELETE /api/v1/content/:id`
-- **Description**: Delete content
-- **Auth**: Required
-- **Example Request**:
-```bash
-curl -X DELETE http://localhost:3000/api/v1/content/507f1f77bcf86cd799439015 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-- **Example Response**:
-```json
-{
-  "message": "Content deleted successfully"
-}
-```
-
 ### SSE Module
 
 #### Stream Events
@@ -597,6 +513,34 @@ eventSource.onerror = (error) => {
 }
 ```
 - **Note**: This is a one-way stream from server to client. Keep the connection open to receive updates.
+
+## Project Structure
+
+```
+src/
+├── common/
+│   ├── decorators/
+│   ├── enums/
+│   ├── filters/
+│   ├── guards/
+│   ├── helpers/
+│   ├── interfaces/
+│   ├── strategies/
+│   └── validators/
+├── modules/
+│   ├── ai/
+│   ├── auth/
+│   ├── content/
+│   ├── database/
+│   ├── queue/
+│   ├── sse/
+│   ├── thread/
+│   └── user/
+├── app.module.ts
+├── app.controller.ts
+├── app.service.ts
+└── main.ts
+```
 
 ## Content Types
 

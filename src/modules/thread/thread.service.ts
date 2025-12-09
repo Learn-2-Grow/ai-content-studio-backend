@@ -1,13 +1,13 @@
 import { forwardRef, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { ThreadStatus } from 'src/common/enums/thread.enum';
 import { NestHelper } from 'src/common/helpers/nest.helper';
-import { IThread, IThreadPagination, IThreadSummary } from 'src/interfaces/thread.interface';
-import { IUser } from 'src/interfaces/user.interface';
+import { IThread, IThreadPagination, IThreadSummary } from 'src/common/interfaces/thread.interface';
+import { IUser } from 'src/common/interfaces/user.interface';
 import { ExceptionHelper } from '../../common/helpers/exceptions.helper';
 import { ContentService } from '../content/content.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { ThreadQueriesDto } from './dto/queries.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
-import { ThreadStatus } from './enums/thread.enum';
 import { ThreadRepository } from './thread.repository';
 
 @Injectable()
@@ -74,25 +74,8 @@ export class ThreadService {
         return updated;
     }
 
-    async remove(id: string, userId: string): Promise<void> {
-        const thread = await this.threadRepository.findByIdAndUserId(id, userId);
-        if (!thread) {
-            ExceptionHelper.getInstance().defaultError(
-                'Thread not found',
-                'THREAD_NOT_FOUND',
-                HttpStatus.NOT_FOUND,
-            );
-        }
-        await this.threadRepository.delete(id);
-        this.logger.log(`Thread deleted: ${id} by user: ${userId}`);
-    }
 
-    /**
-     * Gets summary statistics for the user:
-     * - totalThreads: Total number of threads
-     * - threadsByType: Count of threads grouped by content type
-     * - statusCounts: Count of CONTENTS (not threads) grouped by status (pending, processing, completed, failed)
-     */
+    // Get summary statistics for the user
     async getSummary(user: IUser): Promise<IThreadSummary> {
 
         const userId = user._id.toString();
@@ -122,7 +105,6 @@ export class ThreadService {
         const threadIds: string[] = [];
         threadsByType.forEach((item) => {
             threadsByTypeMap[item._id] = item.count;
-            // Collect all thread IDs from all types
             if (item.threadIds && Array.isArray(item.threadIds)) {
                 threadIds.push(...item.threadIds);
             }
@@ -148,12 +130,11 @@ export class ThreadService {
         }
         const pagination = await this.threadRepository.findAll(payload);
 
-        // Fetch latest content for each thread
+        // Fetch latest content and attach to each thread
         if (pagination?.data && pagination?.data?.length > 0) {
             const threadIds = pagination.data.map(thread => thread._id.toString());
             const latestContentMap = await this.contentService.findLatestContentByThreadIds(threadIds);
 
-            // Attach latest content to each thread
             pagination.data = pagination.data.map(thread => {
                 const threadIdString = thread._id.toString();
                 const latestContent = latestContentMap.get(threadIdString);

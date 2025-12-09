@@ -1,5 +1,5 @@
 import { Document, Types } from "mongoose";
-import { UserType } from "src/modules/user/enums/user.enum";
+import { UserType } from "src/common/enums/user.enum";
 
 export interface IUser extends Document {
     _id: Types.ObjectId;

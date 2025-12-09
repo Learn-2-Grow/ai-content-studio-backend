@@ -1,5 +1,5 @@
-import { IAiPrompt } from 'src/interfaces/prompt.interface';
-import { ContentStatus } from '../../content/enums/content.enum';
+import { IAiPrompt } from './prompt.interface';
+import { ContentStatus } from '../enums/content.enum';
 
 export interface IAIContentResponse {
     content: string;

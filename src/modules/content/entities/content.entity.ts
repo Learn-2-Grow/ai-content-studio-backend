@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { ContentStatus } from '../enums/content.enum';
+import { ContentStatus } from 'src/common/enums/content.enum';
 
 export type ContentDocument = Content & Document;
 
