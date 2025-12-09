@@ -212,10 +212,7 @@ export class ContentService {
 
 
     // Get content status counts.
-
     async getStatusCountsByUserId(threadIds: string[]): Promise<Record<string, number>> {
-
-        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(threadIds);
 
         const statusCountsMap: Record<string, number> = {
             [ContentStatus.PENDING]: 0,
@@ -223,6 +220,13 @@ export class ContentService {
             [ContentStatus.COMPLETED]: 0,
             [ContentStatus.FAILED]: 0,
         };
+
+        if (threadIds.length === 0) {
+            return statusCountsMap;
+        }
+
+        const statusCounts = await this.contentRepository.aggregateStatusCountsByUserId(threadIds);
+
 
         statusCounts.forEach((item) => {
             statusCountsMap[item._id as ContentStatus] = item.count;
