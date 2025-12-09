@@ -98,7 +98,8 @@ export class ContentRepository {
                     status: result.latestContent.status,
                     statusUpdatedAt: result.latestContent.statusUpdatedAt,
                     createdAt: result.latestContent.createdAt,
-                    updatedAt: result.latestContent.updatedAt
+                    updatedAt: result.latestContent.updatedAt,
+                    sentiment: result.latestContent.sentiment
                 } as IContent);
             }
         });
