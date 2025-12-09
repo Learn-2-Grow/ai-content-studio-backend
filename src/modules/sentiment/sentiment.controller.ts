@@ -14,10 +14,10 @@ export class SentimentController {
     constructor(private readonly sentimentService: SentimentService) { }
 
     @Post('analyze')
-    async analyzeSentiment(
+    analyzeSentiment(
         @GetUser() user: IUser,
         @Body() body: AnalysisDto
     ): Promise<{ sentiment: string }> {
-        return await this.sentimentService.analyzeSentiment(user, body);
+        return this.sentimentService.analyzeSentiment(user, body);
     }
 }

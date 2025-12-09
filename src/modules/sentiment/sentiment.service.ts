@@ -16,7 +16,6 @@ export class SentimentService {
     ) { }
 
     async analyzeSentiment(user: IUser, body: AnalysisDto): Promise<{ sentiment: string }> {
-        await this.contentService.findOne(body.contentId, user._id.toString());
 
         const aiPrompt: IAiPrompt = {
             contentPrompt: `Analyze the sentiment of the following text and respond with only one word: "positive", "negative", or "neutral".\n\nText: ${body.prompt}`,
@@ -27,7 +26,7 @@ export class SentimentService {
         const aiResponse = await this.aiService.generateContent(aiPrompt);
         const sentiment = this.extractSentiment(aiResponse.content);
 
-        await this.contentService.update(body.contentId, { sentiment });
+        this.contentService.update(body.contentId, { sentiment });
 
         return { sentiment };
     }
