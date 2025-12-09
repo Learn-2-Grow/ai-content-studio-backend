@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseFilters, UseGuards } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { IUser } from 'src/common/interfaces/user.interface';
 import { GetUser } from '../../common/decorators/getUser.decorator';
@@ -20,16 +20,22 @@ export class ContentController {
     ) { }
 
     @Post('generate')
-    async generateContent(
+    generateContent(
         @GetUser() user: IUser,
         @Body() generateContentDto: GenerateContentDto
     ) {
-        return await this.contentService.generateContent(user, generateContentDto);
-
+        return this.contentService.generateContent(user, generateContentDto);
     }
 
     @Get(':id')
-    async findOne(@GetUser() user: any, @Param('id') id: string) {
+    findOne(@GetUser() user: any, @Param('id') id: string) {
         return this.contentService.findOne(id, user.userId);
+    }
+
+    @Patch(':id')
+    updateSentiment(
+        @Param('id') id: string,
+        @Body() updateContentDto: UpdateContentDto) {
+        return this.contentService.update(id, updateContentDto);
     }
 }

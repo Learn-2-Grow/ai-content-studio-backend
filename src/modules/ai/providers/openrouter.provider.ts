@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AxiosHelper } from 'src/common/helpers/axios.helper';
-import { IAiPrompt } from 'src/common/interfaces/prompt.interface';
 import { ContentStatus } from 'src/common/enums/content.enum';
+import { AxiosHelper } from 'src/common/helpers/axios.helper';
 import { IAIContentResponse, IAIProvider } from 'src/common/interfaces/ai-provider.interface';
+import { IAiPrompt } from 'src/common/interfaces/prompt.interface';
 
 @Injectable()
 export class OpenRouterProvider implements IAIProvider {
@@ -83,9 +83,9 @@ export class OpenRouterProvider implements IAIProvider {
                     const parsedResponse = JSON.parse(responseText);
                     const content = parsedResponse.content || '';
                     const title = parsedResponse.title || content.split(/[.!?]/)[0]?.trim() || content.substring(0, 50);
-
+                    const sentiment = parsedResponse?.sentiment || null;
                     this.logger.log(`Content generated successfully (${content.length} characters)`);
-                    return { content, title, status: ContentStatus.COMPLETED };
+                    return { content, title, status: ContentStatus.COMPLETED, sentiment };
                 } catch (parseError) {
                     this.logger.warn(`Failed to parse JSON response, falling back to text parsing: ${parseError.message}`);
                 }

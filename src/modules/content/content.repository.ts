@@ -23,6 +23,11 @@ export class ContentRepository {
         return this.contentModel.find({ threadId: threadIdObject, _id: { $ne: currentContentId } }).sort({ createdAt: -1 }).exec();
     }
 
+    findOneAndUpdate(id: any, content: Partial<IContent>): Promise<IContent | null> {
+        const idObject = NestHelper.getInstance().getObjectId(id);
+        return this.contentModel.findByIdAndUpdate(idObject, content, { new: true }).exec();
+    }
+
     async update(id: any, content: Partial<IContent>): Promise<IContent | null> {
         const idObject = NestHelper.getInstance().getObjectId(id);
         const updatedContent = await this.contentModel.findByIdAndUpdate(idObject, content, { new: true }).exec();
