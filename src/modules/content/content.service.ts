@@ -13,11 +13,11 @@ import { AIService } from '../ai/ai.service';
 import { QueueService } from '../queue/queue.service';
 import { SseService } from '../sse/sse.service';
 import { ThreadService } from '../thread/thread.service';
-import { UserService } from '../user/user.service';
 import { ContentRepository } from './content.repository';
 import { GenerateContentDto } from './dto/generate-content.dto';
 import { QueryDto } from './dto/query.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
+import { SentimentType } from 'src/common/enums/sentiment.enum';
 
 @Injectable()
 export class ContentService {
@@ -28,7 +28,6 @@ export class ContentService {
         private readonly threadService: ThreadService,
         private readonly queueService: QueueService,
         private readonly aiService: AIService,
-        private readonly userService: UserService,
         private readonly sseService: SseService,
     ) { }
 
@@ -47,6 +46,7 @@ export class ContentService {
             userId: user._id.toString(),
             threadId: thread._id.toString(),
             provider: generateContentDto.provider,
+            sentiment: generateContentDto.sentiment || null,
         };
 
         await this.queueService.addJob(QueueProcess.GENERATE_CONTENT, jobData, { delay: 60000, attempts: 2 });
@@ -104,14 +104,14 @@ export class ContentService {
 
     async executeContentGeneration(jobData: IJobData): Promise<void> {
 
-        const { content, thread, previousContents } = await this.fetchJobData(jobData);
+        const { content, thread, previousContents, sentiment } = await this.fetchJobData(jobData);
         if (!content || !thread) return;
 
         await this.contentRepository.update(content._id, { status: ContentStatus.PROCESSING });
 
         const promptPayload: IPromptPayload = this.buildGeneralPromptPayload(content, thread, previousContents);
 
-        const aiPrompt: IAiPrompt = PromptHelper.buildSmallPrompt(promptPayload);
+        const aiPrompt: IAiPrompt = PromptHelper.buildSmallPrompt(promptPayload, sentiment);
         PromptHelper.setExpectedPromptResponseFormat(aiPrompt);
         const aiResponse = await this.aiService.generateContent(aiPrompt, jobData.provider);
 
@@ -131,7 +131,7 @@ export class ContentService {
 
     }
 
-    async fetchJobData(jobData: IJobData) {
+    async fetchJobData(jobData: IJobData): Promise<{ content: IContent, thread: IThread, previousContents: IContent[], sentiment: SentimentType | null }> {
 
         const [content, thread] = await Promise.all([
             this.contentRepository.findById(jobData.contentId),
@@ -139,7 +139,7 @@ export class ContentService {
         ]);
 
         const previousContents = thread ? await this.contentRepository.findByThreadId(thread._id.toString(), jobData.contentId) : [];
-        return { content, thread, previousContents };
+        return { content, thread, previousContents, sentiment: jobData.sentiment ?? null };
     }
 
     buildGeneralPromptPayload(content: IContent, thread: IThread, previousContents: IContent[]): IPromptPayload {
@@ -188,10 +188,8 @@ export class ContentService {
         return content;
     }
 
-    async update(id: string, userId: string, updateContentDto: UpdateContentDto): Promise<IContent> {
-        await this.findOne(id, userId);
-
-        const updated = await this.contentRepository.update(id, updateContentDto);
+    async update(id: string, updateContentDto: UpdateContentDto): Promise<IContent> {
+        const updated = await this.contentRepository.findOneAndUpdate(id, { sentiment: updateContentDto.sentiment });
 
         if (!updated) {
             ExceptionHelper.getInstance().defaultError(
@@ -202,12 +200,6 @@ export class ContentService {
         }
 
         return updated;
-    }
-
-    async remove(id: string, userId: string): Promise<void> {
-        await this.findOne(id, userId);
-        await this.contentRepository.delete(id);
-        this.logger.log(`Content deleted: ${id} by user: ${userId}`);
     }
 
 

@@ -1,6 +1,7 @@
 import { Document, Types } from 'mongoose';
 import { AIProvider } from 'src/common/enums/ai-provider.enum';
 import { ContentStatus } from 'src/common/enums/content.enum';
+import { SentimentType } from '../enums/sentiment.enum';
 
 export interface IContent extends Document {
     _id: Types.ObjectId;
@@ -12,4 +13,5 @@ export interface IContent extends Document {
     createdAt?: Date;
     updatedAt?: Date;
     provider?: AIProvider;
+    sentiment?: SentimentType;
 }

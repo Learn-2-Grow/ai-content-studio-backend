@@ -1,6 +1,7 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { AIProvider } from 'src/common/enums/ai-provider.enum';
 import { ContentType } from 'src/common/enums/thread.enum';
+import { SentimentType } from 'src/common/enums/sentiment.enum';
 
 export class GenerateContentDto {
     @IsNotEmpty()
@@ -17,4 +18,8 @@ export class GenerateContentDto {
     @IsOptional()
     @IsEnum(AIProvider)
     provider?: AIProvider;
+
+    @IsOptional()
+    @IsString()
+    sentiment?: SentimentType;
 }

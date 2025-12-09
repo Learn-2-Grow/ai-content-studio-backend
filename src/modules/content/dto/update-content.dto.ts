@@ -1,7 +1,8 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty } from 'class-validator';
+import { SentimentType } from 'src/common/enums/sentiment.enum';
 
 export class UpdateContentDto {
-    @IsOptional()
-    @IsString()
-    generatedContent?: string;
+    @IsNotEmpty()
+    @IsEnum(SentimentType)
+    sentiment: SentimentType;
 }

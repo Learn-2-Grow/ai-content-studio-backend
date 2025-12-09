@@ -1,3 +1,4 @@
+import { SentimentType } from 'src/common/enums/sentiment.enum';
 import { ContentType } from 'src/common/enums/thread.enum';
 import {
     IAiPrompt,
@@ -5,7 +6,7 @@ import {
 } from 'src/common/interfaces/prompt.interface';
 
 export class PromptHelper {
-    static buildContentGenerationPrompts(payload: IPromptPayload): IAiPrompt {
+    static buildContentGenerationPrompts(payload: IPromptPayload, sentiment: SentimentType | null): IAiPrompt {
         const { type, history, current } = payload;
 
         const tone = current.tone || 'neutral';
@@ -49,7 +50,7 @@ export class PromptHelper {
 
         const typeInstruction = this.getTypeInstruction(type);
 
-        const contentPrompt = `
+        let contentPrompt = `
 You are an AI content generator.
 
 ${baseInstruction}${contextText}
@@ -94,6 +95,11 @@ Generate a short, catchy, human-friendly title for this content thread.
 - No quotes around the title.
 - Make it relevant and clear for the overall topic.
   `.trim();
+
+        // Add sentiment instruction
+        if (sentiment) {
+            contentPrompt += `\n\nThe previous content sentiment is ${sentiment}. for the same prompt, so please generate the with valuable information and not repeat the same information as the previous content`;
+        }
 
         return { contentPrompt, titlePrompt };
     }
@@ -148,7 +154,7 @@ Follow the user's instructions carefully.
         }
     }
 
-    static buildSmallPrompt(payload: IPromptPayload): IAiPrompt {
+    static buildSmallPrompt(payload: IPromptPayload, sentiment: SentimentType | null): IAiPrompt {
         const { type, current, history } = payload;
 
         const typeLabels = {
@@ -165,6 +171,11 @@ Follow the user's instructions carefully.
         // Smallest possible prompt: just type + prompt and skip history
         let prompt = typeLabel ? `${typeLabel}: ${current.prompt}` : current.prompt;
         prompt = prompt.trim() + " response within 100 words";
+
+        // Add sentiment instruction
+        if (sentiment) {
+            prompt += `\n\nDo not repeat previous content with sentiment: ${sentiment}. Add new, valuable information.`;
+        }
         const titlePrompt = 'provide a short title for the content within 3-5 words';
         return { contentPrompt: prompt, titlePrompt };
     }

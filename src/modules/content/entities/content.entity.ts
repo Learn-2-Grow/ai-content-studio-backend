@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ContentStatus } from 'src/common/enums/content.enum';
+import { SentimentType } from 'src/common/enums/sentiment.enum';
 
 export type ContentDocument = Content & Document;
 
@@ -22,6 +23,10 @@ export class Content {
 
     @Prop({ default: Date.now })
     statusUpdatedAt: Date;
+
+
+    @Prop({ default: 'neutral' })
+    sentiment: SentimentType;
 }
 
 export const ContentSchema = SchemaFactory.createForClass(Content);
