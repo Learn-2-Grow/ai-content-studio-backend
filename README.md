@@ -9,6 +9,7 @@ AI Content Studio is a backend API that helps users create content using AI. Use
 - User authentication with JWT tokens (access & refresh tokens)
 - Create and manage content threads
 - Generate AI content using Gemini or OpenRouter
+- Analyze content sentiment (positive, negative, neutral) using AI
 - Real-time updates using Server-Sent Events (SSE)
 - Background job processing with Bull queue
 - Store data in MongoDB
@@ -475,6 +476,31 @@ curl http://localhost:3000/api/v1/content/507f1f77bcf86cd799439015 \
 }
 ```
 
+### Sentiment Module
+
+#### Analyze Sentiment
+- **Endpoint**: `POST /api/v1/sentiment/analyze`
+- **Description**: Analyze the sentiment of text using AI and update the content record
+- **Auth**: Required
+- **Example Request**:
+```bash
+curl -X POST http://localhost:3000/api/v1/sentiment/analyze \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "I love this product! It works perfectly and exceeded my expectations.",
+    "contentId": "507f1f77bcf86cd799439015"
+  }'
+```
+- **Example Response**:
+```json
+{
+  "sentiment": "positive"
+}
+```
+- **Sentiment Values**: `positive`, `negative`, or `neutral`
+- **Note**: The sentiment is automatically updated in the content record after analysis.
+
 ### SSE Module
 
 #### Stream Events
@@ -533,6 +559,7 @@ src/
 │   ├── content/
 │   ├── database/
 │   ├── queue/
+│   ├── sentiment/
 │   ├── sse/
 │   ├── thread/
 │   └── user/
